@@ -1,0 +1,14 @@
+[project]
+name = "synqit-py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.115.12",
+    "httpx>=0.28.1",
+    "psycopg2-binary>=2.9.10",
+    "rich>=14.0.0",
+    "uvicorn>=0.34.2",
+]

@@ -9,6 +9,7 @@ from app.models import TrackSearchResponse
 from app.services import TrackRepository
 
 from database.config import SynqItDB
+from rich import print
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -104,7 +105,6 @@ async def read_root():
 def write_track(track: SynqItDB.Track):
     try:
         response = SynqItDB.Track.write(track)
-        print(response)
         if response["status"] == "success":
             return response
         else:
