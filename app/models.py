@@ -4,7 +4,6 @@ import logging
 
 log = logging.getLogger(__name__)
 
-
 def _parse_int_safe(value: Any) -> Optional[int]:
     if isinstance(value, int):
         return value
@@ -50,7 +49,8 @@ class Track(BaseModel):
     albumName: Optional[str] = None
     imageUrl: Optional[HttpUrl] = None
     previewUrl: Optional[HttpUrl] = None
-
+    videoId: Optional[str] = None
+    # audioUrl: Optional[HttpUrl] = None
     genres: List[str] = Field(default_factory=list)
     listeners: Optional[int] = None
     playcount: Optional[int] = None
@@ -128,6 +128,7 @@ class Track(BaseModel):
             albumName=None,
             imageUrl=artwork_url,
             previewUrl=None,
+            videoId=None,
             genres=genre_tags,
             listeners=_parse_int_safe(json_data.get("listeners")),
             playcount=_parse_int_safe(json_data.get("playcount")),

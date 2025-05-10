@@ -254,6 +254,15 @@ wheels = [
 ]
 
 [[package]]
+name = "redis"
+version = "6.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/12/dffaaa4374b8d5f3b7ff5c40025c9db387e06264302d5a9da6043cd84e1f/redis-6.0.0.tar.gz", hash = "sha256:5446780d2425b787ed89c91ddbfa1be6d32370a636c8fdb687f11b1c26c1fa88", size = 4620969, upload_time = "2025-04-30T19:09:30.798Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/08/c8/68081c9d3531f7b2a4d663326b96a9dcbc2aef47df3c6b5c38dea90dff02/redis-6.0.0-py3-none-any.whl", hash = "sha256:a2e040aee2cdd947be1fa3a32e35a956cd839cc4c1dbbe4b2cdee5b9623fd27c", size = 268950, upload_time = "2025-04-30T19:09:28.432Z" },
+]
+
+[[package]]
 name = "rich"
 version = "14.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -296,8 +305,10 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "psycopg2-binary" },
+    { name = "redis" },
     { name = "rich" },
     { name = "uvicorn" },
+    { name = "yt-dlp" },
 ]
 
 [package.metadata]
@@ -306,8 +317,10 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
+    { name = "redis", extras = ["asyncio"], specifier = ">=6.0.0" },
     { name = "rich", specifier = ">=14.0.0" },
     { name = "uvicorn", specifier = ">=0.34.2" },
+    { name = "yt-dlp", specifier = ">=2025.4.30" },
 ]
 
 [[package]]
@@ -342,4 +355,13 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a6/ae/9bbb19b9e1c450cf9ecaef06463e40234d98d95bf572fab11b4f19ae5ded/uvicorn-0.34.2.tar.gz", hash = "sha256:0e929828f6186353a80b58ea719861d2629d766293b6d19baf086ba31d4f3328", size = 76815, upload_time = "2025-04-19T06:02:50.101Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b1/4b/4cef6ce21a2aaca9d852a6e84ef4f135d99fcd74fa75105e2fc0c8308acd/uvicorn-0.34.2-py3-none-any.whl", hash = "sha256:deb49af569084536d269fe0a6d67e3754f104cf03aba7c11c40f01aadf33c403", size = 62483, upload_time = "2025-04-19T06:02:48.42Z" },
+]
+
+[[package]]
+name = "yt-dlp"
+version = "2025.4.30"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/75/ca/1d1a33dec2107463f59bc4b448fcf43718d86a36b6150e8a0cfd1a96a893/yt_dlp-2025.4.30.tar.gz", hash = "sha256:d01367d0c3ae94e35cb1e2eccb7a7c70e181c4ca448f4ee2374f26489d263603", size = 2981094, upload_time = "2025-04-30T23:31:17.679Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ea/18/bbccb18661a853c3db947152439229b9bf686fe0ab2cc7848ab3a24f2ad2/yt_dlp-2025.4.30-py3-none-any.whl", hash = "sha256:53cd82bf13f12a1fe9c564b0004e001156b153c9247fa3cef14d1400ab359150", size = 3239476, upload_time = "2025-04-30T23:31:14.997Z" },
 ]

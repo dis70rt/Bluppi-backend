@@ -4,7 +4,7 @@ import psycopg2
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-load_dotenv()
+load_dotenv(override=True)
 
 class SynqItDB:
     def __init__(self):
@@ -12,6 +12,7 @@ class SynqItDB:
         self.cursor = None
 
     def __enter__(self):
+        print(f"Database connection established. {self.connection}")
         self.connection = psycopg2.connect(
             dbname=os.getenv("DB_NAME"),
             user=os.getenv("DB_USER"),
@@ -20,6 +21,7 @@ class SynqItDB:
             port=os.getenv("DB_PORT"),
         )
         self.cursor = self.connection.cursor()
+        # print(f"Database connection established. {self.connection}")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -43,7 +45,7 @@ class SynqItDB:
         genres: List[str]
         image_url: str
         preview_url: str
-        youtube_url: str
+        video_id: str
         listeners: int
         play_count: int
         popularity: int
@@ -52,11 +54,10 @@ class SynqItDB:
         def write(cls, track: "SynqItDB.Track"):
             with SynqItDB() as db:
                 try:
-
                     query = """
                         INSERT INTO tracks (
                             id, title, artist, album, duration, genre,
-                            image_url, preview_url, youtube_url,
+                            image_url, preview_url, video_id,
                             listeners, play_count, popularity
                         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id) DO NOTHING
@@ -71,7 +72,7 @@ class SynqItDB:
                         track.genres,
                         track.image_url,
                         track.preview_url,
-                        track.youtube_url,
+                        track.video_id,
                         track.listeners,
                         track.play_count,
                         track.popularity,
@@ -111,7 +112,7 @@ class SynqItDB:
                                 "genres": result[5],
                                 "imageUrl": result[6],
                                 "previewUrl": result[7],
-                                "ytUrl": result[8],
+                                "videoId": result[8],
                                 "listeners": result[9],
                                 "playcount": result[10],
                                 "popularity": result[11],
@@ -124,6 +125,7 @@ class SynqItDB:
                             "message": f"Track ID {track_id} not found.",
                         }
                 except psycopg2.Error as e:
+                    print(f"Error reading track: {e}")
                     return {
                         "status": "error",
                         "status_code": 500,
