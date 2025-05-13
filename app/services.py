@@ -11,12 +11,12 @@ class TrackRepository:
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
-    async def search_itunes_tracks(self, query: str) -> List[Track]:
+    async def search_itunes_tracks(self, query: str, limit = config.DEFAULT_SEARCH_LIMIT) -> List[Track]:
         params = {
             "term": query,
             "media": "music",
             "entity": "song",
-            "limit": config.DEFAULT_SEARCH_LIMIT,
+            "limit": limit,
         }
         try:
             response = await self.client.get(config.ITUNES_BASE_URL, params=params)

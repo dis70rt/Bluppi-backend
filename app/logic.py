@@ -6,13 +6,13 @@ from .models import Track, TrackSearchResponse
 from .services import TrackRepository
 
 async def search_enrich_and_sort_tracks(
-    query: str, repository: TrackRepository
+    query: str, repository: TrackRepository, limit: int
 ) -> TrackSearchResponse:
     if not query:
         return TrackSearchResponse(results=[], suggestedTracks=[])
 
     try:
-        itunes_results: List[Track] = await repository.search_itunes_tracks(query)
+        itunes_results: List[Track] = await repository.search_itunes_tracks(query, limit)
     except Exception:
         return TrackSearchResponse(results=[], suggestedTracks=[])
 

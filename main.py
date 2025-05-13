@@ -1,16 +1,21 @@
 import logging
 from contextlib import asynccontextmanager
 import json
+from typing import Optional
 
 import httpx
-from fastapi import FastAPI, Query, HTTPException, Depends
+from fastapi import FastAPI, Query, HTTPException, Depends, Request
+from fastapi.responses import JSONResponse
 
 from app import logic
 from app.models import TrackSearchResponse
 from app.services import TrackRepository
+from app.recommendation import RecommendationResponse, recommend_track
 
 from database.config import SynqItDB
 from rich import print
+import time
+import datetime
 
 import redis.asyncio as aioredis 
 
@@ -45,11 +50,30 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Music Track Search API",
+    title="SynqIt API",
     description="Searches iTunes, enriches with Last.fm, and returns sorted tracks.",
     version="1.0.0",
     lifespan=lifespan,
 )
+
+@app.middleware("http")
+async def ping_middleware(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = round((time.time() - start_time) * 1000, 2)
+
+    if response.headers.get("content-type") == "application/json":
+        body = b""
+        async for chunk in response.body_iterator:
+            body += chunk
+        try:
+            data = json.loads(body)
+            data["ping_ms"] = process_time
+            return JSONResponse(content=data, status_code=response.status_code)
+        except Exception:
+            return response
+    else:
+        return response
 
 async def get_http_client() -> httpx.AsyncClient:
     if not hasattr(app.state, "http_client") or not app.state.http_client:
@@ -82,6 +106,13 @@ async def search_tracks(
         title="Search Query",
         description="The search term for tracks (e.g., artist, song title).",
     ),
+    limit: Optional[int] = Query(
+        100,
+        gt=0,
+        le=100,
+        title="Result Limit",
+        description="Maximum number of search results to return (default: 10, max: 100)."
+    ),
     repo: TrackRepository = Depends(get_track_repository),
     redis: aioredis.Redis = Depends(get_redis),
 ):
@@ -89,14 +120,14 @@ async def search_tracks(
     cache_key = f"search:{query}"
     cached = await redis.get(cache_key)
 
-    if cached:
+    if cached and limit is None:
         print(f"[yellow]Cache hit for query: '{query}'[/yellow]")
         return TrackSearchResponse.model_validate_json(cached)
 
     log.info(f"Cache miss for search query '{query}'")
     try:
 
-        results: TrackSearchResponse = await logic.search_enrich_and_sort_tracks(query, repo)
+        results: TrackSearchResponse = await logic.search_enrich_and_sort_tracks(query, repo, limit)
         await redis.set(cache_key, results.model_dump_json(), ex=3600)
         return results
     
@@ -115,10 +146,13 @@ async def search_tracks(
 
 @app.get("/", tags=["Health"], include_in_schema=False)
 async def read_root():
-    return {"message": "Welcome to the Music Track Search API!"}
+    return {
+        "message": "Welcome to the SynqIt API!",
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
 
 
-@app.post("/api/v1/write-track", tags=["WriteTrack"])
+@app.post("/api/v1/write-track", tags=["WriteTrack"], description="Write a track to the database.")
 def write_track(track: SynqItDB.Track):
     try:
         response = SynqItDB.Track.write(track)
@@ -133,7 +167,7 @@ def write_track(track: SynqItDB.Track):
         raise HTTPException(status_code=500, detail="Failed to write track")
 
 
-@app.get("/api/v1/track/{track_id}", tags=["Health"])
+@app.get("/api/v1/track/{track_id}", tags=["Get Track"])
 async def read_track(track_id: int, redis: aioredis.Redis = Depends(get_redis)):
 
     cache_key = f"track:{track_id}"
@@ -156,7 +190,7 @@ async def read_track(track_id: int, redis: aioredis.Redis = Depends(get_redis)):
         raise HTTPException(status_code=500, detail="Failed to read track")
     
 
-@app.get("/api/v1/audio-stream", tags=["audio"])
+@app.get("/api/v1/audio-stream", tags=["AudioStream"])
 async def audio_stream(
     q: str | None = Query(
         None,
@@ -193,7 +227,7 @@ async def audio_stream(
         await redis.set(cache_key, f"{videoId}|{audioUrl}", ex=5 * 3600)
         return {"videoId": videoId, "audioUrl": audioUrl, "cached": False}
 
-    else:  # id is not None
+    else:
         cache_key = f"audio_url_id:{id.lower()}"
         if cached := await redis.get(cache_key):
             return {"audioUrl": cached, "cached": True}
@@ -204,3 +238,24 @@ async def audio_stream(
 
         await redis.set(cache_key, audioUrl, ex=5 * 3600)
         return {"audioUrl": audioUrl, "cached": False}
+    
+@app.get("/api/v1/recommendations", response_model=RecommendationResponse, tags=["Recommendations"])
+async def recommend_next_track(
+    artist: str = Query(..., title="Artist Name"),
+    track: str = Query(..., title="Track Name"),
+    redis: aioredis.Redis = Depends(get_redis),
+    client: httpx.AsyncClient = Depends(get_http_client)
+    ):
+
+    # cache_key = f"recommendation:{artist.lower()}:{track.lower()}"
+    # cached = await redis.get(cache_key)
+    # if cached:
+    #     log.info(f"Cache hit for recommendation: '{artist} - {track}'")
+    #     return RecommendationResponse.model_validate_json(cached)
+
+    recommended_track = await recommend_track(client, artist, track)
+
+    if not recommended_track:
+        return HTTPException(status_code=404, detail="No recommendations found")
+    
+    return recommended_track
