@@ -12,3 +12,4 @@ CREATE TABLE tracks (
     play_count INT DEFAULT 0,
     popularity INT DEFAULT 0
 )
+

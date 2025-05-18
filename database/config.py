@@ -12,7 +12,6 @@ class SynqItDB:
         self.cursor = None
 
     def __enter__(self):
-        print(f"Database connection established. {self.connection}")
         self.connection = psycopg2.connect(
             dbname=os.getenv("DB_NAME"),
             user=os.getenv("DB_USER"),
@@ -21,7 +20,7 @@ class SynqItDB:
             port=os.getenv("DB_PORT"),
         )
         self.cursor = self.connection.cursor()
-        # print(f"Database connection established. {self.connection}")
+        print(f"Database connection established. {self.connection}")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
