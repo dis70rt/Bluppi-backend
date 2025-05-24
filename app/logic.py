@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import Dict, List
 from .yt_services import YouTubeDLP as ytDLP
 
 from .models import Track, TrackSearchResponse
@@ -18,6 +18,17 @@ async def search_enrich_and_sort_tracks(
 
     if not itunes_results:
         return TrackSearchResponse(results=[], suggestedTracks=[])
+    
+    unique_tracks: Dict[str, Track] = {}
+    for track in itunes_results:
+        unique_key = f"{track.artistName.lower()}:{track.trackName.lower()}"
+        if unique_key not in unique_tracks:
+            unique_tracks[unique_key] = track
+    
+    unique_track_list = list(unique_tracks.values())
+    
+    if len(unique_track_list) > limit:
+        unique_track_list = unique_track_list[:limit]
 
     lastfm_infos = await asyncio.gather(
         *(
@@ -27,7 +38,7 @@ async def search_enrich_and_sort_tracks(
         return_exceptions=True,
     )
 
-    for track, lm in zip(itunes_results, lastfm_infos):
+    for track, lm in zip(unique_track_list, lastfm_infos):
         if isinstance(lm, dict):
             try:
                 track.enrich_with_lastfm(lm)

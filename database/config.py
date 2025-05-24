@@ -20,7 +20,6 @@ class SynqItDB:
             port=os.getenv("DB_PORT"),
         )
         self.cursor = self.connection.cursor()
-        print(f"Database connection established. {self.connection}")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -34,99 +33,3 @@ class SynqItDB:
             self.cursor.close()
         if self.connection:
             self.connection.close()
-
-    class Track(BaseModel):
-        id: int
-        title: str
-        artist: str
-        album: str
-        duration: int
-        genres: List[str]
-        image_url: str
-        preview_url: str
-        video_id: str
-        listeners: int
-        play_count: int
-        popularity: int
-
-        @classmethod
-        def write(cls, track: "SynqItDB.Track"):
-            with SynqItDB() as db:
-                try:
-                    query = """
-                        INSERT INTO tracks (
-                            id, title, artist, album, duration, genre,
-                            image_url, preview_url, video_id,
-                            listeners, play_count, popularity
-                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (id) DO NOTHING
-                    """
-
-                    values = (
-                        track.id,
-                        track.title,
-                        track.artist,
-                        track.album,
-                        track.duration,
-                        track.genres,
-                        track.image_url,
-                        track.preview_url,
-                        track.video_id,
-                        track.listeners,
-                        track.play_count,
-                        track.popularity,
-                    )
-                    db.cursor.execute(query, values)
-                    db.connection.commit()
-                    return {
-                        "status": "success",
-                        "status_code": 200,
-                        "message": f"Track ID {track.id} inserted successfully.",
-                    }
-                except psycopg2.Error as e:
-                    db.connection.rollback()
-                    return {
-                        "status": "error",
-                        "status_code": 500,
-                        "message": f"Error inserting track: {e}",
-                    }
-
-        @classmethod
-        def read(cls, track_id: int):
-            with SynqItDB() as db:
-                try:
-                    query = "SELECT * FROM tracks WHERE id = %s"
-                    db.cursor.execute(query, (track_id,))
-                    result = db.cursor.fetchone()
-                    if result:
-                        return {
-                            "status": "success",
-                            "status_code": 200,
-                            "track": {
-                                "trackId": result[0],
-                                "trackName": result[1],
-                                "artistName": result[2],
-                                "albumName": result[3],
-                                "duration": result[4],
-                                "genres": result[5],
-                                "imageUrl": result[6],
-                                "previewUrl": result[7],
-                                "videoId": result[8],
-                                "listeners": result[9],
-                                "playcount": result[10],
-                                "popularity": result[11],
-                            },
-                        }
-                    else:
-                        return {
-                            "status": "error",
-                            "status_code": 404,
-                            "message": f"Track ID {track_id} not found.",
-                        }
-                except psycopg2.Error as e:
-                    print(f"Error reading track: {e}")
-                    return {
-                        "status": "error",
-                        "status_code": 500,
-                        "message": f"Error reading track: {e}",
-                    }

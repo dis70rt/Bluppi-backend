@@ -1,12 +1,11 @@
+from fastapi import APIRouter, HTTPException, Path, status, Query
 
-
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query, status
-from rich import print_json
-
-from database.users import UserCreate, UserDB, UserResponse, UserUpdate
+from pydantic import BaseModel
+from database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
 
 router = APIRouter(tags=["Users"])
+class TrackInteraction(BaseModel):
+    track_id: int
 
 @router.post("/api/v1/user", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
 async def create_user(user: UserCreate):
@@ -18,27 +17,18 @@ async def create_user(user: UserCreate):
         )
     return result["user"]
 
-# @router.get("/api/v1/user", response_model=UserResponse)
-# async def get_user(
-#     id: Optional[str] = Query(
-#         None, 
-#         title="User ID",
-#         description="The userId of the user to retrieve",
-#     )):
-#     result = UserDB.get_by_id(id)
-#     if result["status"] == "error":
-#         raise HTTPException(
-#             status_code=result["status_code"],
-#             detail=result["message"]
-#         )
-#     return result["user"]
+@router.get("/api/v1/user/{user_id}", response_model=UserResponse)
+async def get_user_by_id(user_id: str):
+    result = UserDB.get_by_id(user_id)
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=result["status_code"],
+            detail=result["message"]
+        )
+    return result["user"]
 
-@router.get("/api/v1/user", response_model=UserResponse)
-async def get_user_by_username(username: Optional[str] = Query(
-        None, 
-        title="Username",
-        description="The username of the user to retrieve",
-    )):
+@router.get("/api/v1/user/username/{username}", response_model=UserResponse)
+async def get_user_by_username(username: str):
     result = UserDB.get_by_username(username)
     if result["status"] == "error":
         raise HTTPException(
@@ -75,12 +65,69 @@ async def search_users(q: str = "", limit: int = 10, offset: int = 0):
             status_code=result["status_code"],
             detail=result["message"]
         )
-    for user in result.get("users", []):
-        user["created_at"] = user["created_at"].isoformat()
-        user["updated_at"] = user["updated_at"].isoformat()
-    
-    return {"users": result.get("users", []), "count": result.get("count", 0)}
+    return {"users": result["users"], "count": result["count"]}
 
 @router.get("/api/v1/test")
 async def test_endpoint():
-    return UserDB.test_connection()
+    result = UserDB.test_connection()
+    if result["status"] == "error":
+        raise HTTPException(status_code=500, detail=result["message"])
+    return result
+
+@router.get("/api/v1/user/check/username/{username}")
+async def check_username(username: str):
+    result = UserDB.username_exists(username)
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=result["status_code"],
+            detail=result["message"]
+        )
+    return {"exists": result["exists"]}
+
+@router.get("/api/v1/user/check/email/{email}")
+async def check_email(email: str):
+    result = UserDB.email_exists(email)
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=result["status_code"],
+            detail=result["message"]
+        )
+    return {"exists": result["exists"]}
+
+
+@router.post("/api/v1/user/{user_id}/like", status_code=status.HTTP_201_CREATED)
+async def like_track(user_id: str, track: TrackInteraction):
+    result = UserDB.like_track(user_id, track.track_id)
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=result["status_code"],
+            detail=result["message"]
+        )
+    return {"message": result["message"]}
+
+@router.delete("/api/v1/user/{user_id}/unlike/{track_id}")
+async def unlike_track(user_id: str, track_id: int):
+    result = UserDB.unlike_track(user_id, track_id)
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=result["status_code"],
+            detail=result["message"]
+        )
+    return {"message": result["message"]}
+
+@router.get("/api/v1/user/{user_id}/likes")
+async def get_liked_tracks(
+    user_id: str, 
+    limit: int = Query(20, ge=1, le=100), 
+    offset: int = Query(0, ge=0)
+):
+    result = UserDB.get_liked_tracks(user_id, limit, offset)
+    if result["status"] == "error":
+        raise HTTPException(
+            status_code=result["status_code"],
+            detail=result["message"]
+        )
+    return {
+        "tracks": result["tracks"],
+        "total": result["total"]
+    }

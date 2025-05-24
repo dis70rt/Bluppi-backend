@@ -5,6 +5,10 @@ from fastapi.responses import JSONResponse
 
 
 async def ping_middleware(request: Request, call_next):
+
+    if request.url.path.startswith("/.well-known/"):
+        return await call_next(request)
+
     start_time = time.time()
     response = await call_next(request)
     process_time = round((time.time() - start_time) * 1000, 2)

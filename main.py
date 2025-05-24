@@ -1,16 +1,19 @@
 import logging
 from contextlib import asynccontextmanager
 
+from fastapi.responses import FileResponse
 import httpx
 from fastapi import APIRouter, FastAPI
 
 from rich import print
 import datetime
+import os
 
 import redis.asyncio as aioredis
 
 from endpoints.middleware import ping_middleware
-from endpoints.routes import tracks, audio, users
+from endpoints.routes import following, history, tracks, audio, users
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -18,9 +21,14 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
 router.include_router(tracks.router)
-router.include_router(audio.router)
 router.include_router(users.router)
+router.include_router(following.router)
+router.include_router(history.router)
+router.include_router(audio.router)
+
+WELL_KNOWN_DIR = os.path.join(os.path.dirname(__file__), ".well-known")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -59,7 +67,24 @@ async def read_root():
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
+@app.get("/.well-known/assetlinks.json")
+async def get_android_asset_links():
+    file_path = os.path.join(WELL_KNOWN_DIR, "assetlinks.json")
+    return FileResponse(
+        path=file_path, 
+        media_type="application/json"
+    )
+
 app.include_router(router)
+
+@app.get("/{username}")
+async def user_profile(username: str):
+    return {
+        "message": f"Profile page for {username}",
+        "download_app": "https://saikat.in"
+    }
+
+
 
     
 
