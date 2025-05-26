@@ -26,10 +26,12 @@ class ConnectionManager:
         if user_id in self.user_connections:
             await self.user_connections[user_id].send_text(json.dumps(message))
     
-    #TODO: Thing the implementation later
     async def send_to_conversation(self, conversation_id: str, message: dict):
         if conversation_id in self.conversation_participants:
             task = []
+            for user_id in self.conversation_participants[conversation_id]:
+                if user_id in self.user_connections:
+                    task.append(self.send_to_user(user_id, message))
         
 
 manager = ConnectionManager()
@@ -100,6 +102,41 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 }
 
                 await manager.send_to_conversation(conversation_id, response)
+
+                for participant in manager.conversation_participants.get(conversation_id, set()):
+                    status = "sent"
+                    if participant == user_id:
+                        status = "seen"
+                    
+                    cassandra.insert_message_status(
+                        message_id=UUID(message_id),
+                        user_id=UUID(participant),
+                        status=status,
+                        )
+            
+            elif data["type"] == "status_update":
+                message_id = data["message_id"]
+                status = data["status"]
+                
+                cassandra.update_message_status(
+                    message_id=UUID(message_id),
+                    user_id=UUID(user_id),
+                    status=status,
+                    updated_at=datetime.now(ist_timezone)
+                )
+
+                msg = cassandra.select_message_info(message_id=UUID(message_id))
+                if msg:
+                    await manager.send_to_user(
+                        str(msg.sender_id), 
+                        {
+                            "type": "status_update",
+                            "message_id": message_id,
+                            "user_id": user_id,
+                            "status": status,
+                            "conversation_id": str(msg.conversation_id),
+                        }
+                    )
             
     except Exception as e:
         print(f"WebSocket error for user {user_id}: {e}")

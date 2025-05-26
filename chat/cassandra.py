@@ -185,11 +185,11 @@ class CassandraClient:
             log.error(f"Failed to insert message status: {e}")
             raise
             
-    def update_message_status(self, message_id: UUID, user_id: UUID, status: str):
+    def update_message_status(self, message_id: UUID, user_id: UUID, status: str, updated_at: datetime):
         try:
             self.session.execute(
                 self.prepared_query.update_message_status.bind(
-                    (status, datetime.now(), message_id, user_id)
+                    (status, updated_at, message_id, user_id)
                 )
             )
             log.info(f"Updated message status for message {message_id} and user {user_id}")
