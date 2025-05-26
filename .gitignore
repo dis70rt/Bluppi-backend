@@ -7,3 +7,4 @@ __pycache__/
 /database/musicbrainz
 /db-init/init.sql
 docker-compose.yml
+/chat/services
