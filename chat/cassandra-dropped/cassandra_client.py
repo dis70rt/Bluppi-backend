@@ -13,9 +13,9 @@ load_dotenv(override=True)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
-HOST = os.environ("CASSANDRA_HOST", "localhost")
-PORT = os.environ("CASSANDRA_PORT", 9042)
-KEY_SPACE = None
+HOST = os.environ.get("CASSANDRA_HOST", "localhost")
+PORT = os.environ.get("CASSANDRA_PORT", 9042)
+KEY_SPACE = "chat_app"
 
 
 class PreparedQuery:
@@ -26,8 +26,9 @@ class PreparedQuery:
         self.insert_conversation_participants: PreparedStatement = session.prepare(
             "INSERT INTO conversation_participants (conversation_id, user_id) VALUES (?, ?)"
         )
+        # TODO: Remove ALLOW FILTERING in production, use proper partitioning
         self.select_user_conversations: PreparedStatement = session.prepare(
-            "SELECT conversation_id FROM conversation_participants WHERE user_id = ?"
+            "SELECT conversation_id FROM conversation_participants WHERE user_id = ? ALLOW FILTERING"
         )
         self.select_conversation_participants: PreparedStatement = session.prepare(
             "SELECT user_id FROM conversation_participants WHERE conversation_id = ?"
@@ -84,7 +85,7 @@ class CassandraClient:
             log.error(f"Failed to insert conversation: {e}")
             raise
     
-    def insert_conversation_participants(self, conversation_id: UUID, user_id: str):
+    def insert_conversation_participants(self, conversation_id: UUID, user_id: UUID):
         try:
             self.session.execute(
                 self.prepared_query.insert_conversation_participants.bind(
