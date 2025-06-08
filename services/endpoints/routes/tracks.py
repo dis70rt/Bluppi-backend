@@ -4,13 +4,13 @@ from typing import Optional, List
 import logging
 import httpx
 
-from app.models import TrackSearchResponse
-from app.recommendation import RecommendationResponse, recommend_track
-from app.services import TrackRepository
-from app import logic
-from database.config import SynqItDB
-from database.db_tracks import Track, TrackDB
-from endpoints.core import get_http_client, get_redis, get_track_repository
+from ...app.models import TrackSearchResponse
+from ...app.recommendation import RecommendationResponse, recommend_track
+from ...app.services import TrackRepository
+from ...app import logic
+from ...database.config import SynqItDB
+from ...database.db_tracks import Track, TrackDB
+from ...endpoints.core import get_http_client, get_redis, get_track_repository
 from pydantic import BaseModel
 
 import redis.asyncio as aioredis

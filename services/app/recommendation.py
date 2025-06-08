@@ -7,8 +7,8 @@ import httpx
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-from app import logic
-from app.models import Track
+from ..app import logic
+from ..app.models import Track
 
 load_dotenv()
 

@@ -1,92 +1,242 @@
-import logging
-from contextlib import asynccontextmanager
-
-from fastapi.responses import FileResponse
-import httpx
-from fastapi import APIRouter, FastAPI
-
-from rich import print
-import datetime
+import subprocess
+import sys
 import os
 
-import redis.asyncio as aioredis
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from endpoints.middleware import ping_middleware
-from endpoints.routes import following, history, tracks, audio, users
+import signal
+import argparse
+import time
+import psutil
+from datetime import datetime
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.prompt import Confirm
 
+try:
+    from setup import setup
+except ImportError:
+    print("setup.py not found. Please ensure it exists in the same directory.")
+    sys.exit(1)
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-log = logging.getLogger(__name__)
+console = Console()
 
-router = APIRouter()
-
-router.include_router(tracks.router)
-router.include_router(users.router)
-router.include_router(following.router)
-router.include_router(history.router)
-router.include_router(audio.router)
-
-WELL_KNOWN_DIR = os.path.join(os.path.dirname(__file__), ".well-known")
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    log.info("Application startup: Creating HTTPX client.")
-
-    client = httpx.AsyncClient(timeout=10.0)
-
-    redis_client = aioredis.Redis(
-        host="localhost", port=6379, db=0,
-        encoding="utf-8", decode_responses=True
-    )
-
-    app.state.http_client = client
-    app.state.redis = redis_client
-
-    yield
-
-    log.info("Application shutdown: Closing HTTPX client.")
-    await client.aclose()
-    await redis_client.close()
-
-
-app = FastAPI(
-    title="SynqIt API",
-    description="Searches iTunes, enriches with Last.fm, and returns sorted tracks.",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
-app.middleware("http")(ping_middleware)
-
-@app.get("/", tags=["Health"], include_in_schema=False)
-async def read_root():
-    return {
-        "message": "Welcome to the SynqIt API!",
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
-    }
-
-@app.get("/.well-known/assetlinks.json")
-async def get_android_asset_links():
-    file_path = os.path.join(WELL_KNOWN_DIR, "assetlinks.json")
-    return FileResponse(
-        path=file_path, 
-        media_type="application/json"
-    )
-
-app.include_router(router)
-
-@app.get("/{username}")
-async def user_profile(username: str):
-    return {
-        "message": f"Profile page for {username}",
-        "download_app": "https://saikat.in"
-    }
-
-
-
+class Server:
+    def __init__(self, name, module, port, domain):
+        self.name = name
+        self.module = module
+        self.port = port
+        self.domain = domain
+        self.process = None
+        self.start_time = None
+        self.pid_file = f".{name.lower().replace(' ', '_')}_pid"
     
-
-
+    def start(self):
+        
+        python_path = sys.executable
+        cmd = [python_path, "-m", "uvicorn", self.module, "--port", str(self.port), "--log-level", "error"]
+        self.process = subprocess.Popen(cmd)
+        self.start_time = datetime.now()
+        
+        
+        with open(self.pid_file, 'w') as f:
+            f.write(str(self.process.pid))
+            
+        return self.process.pid
     
+    def stop(self):
+        if self.process:
+            self.process.send_signal(signal.SIGINT)
+            if os.path.exists(self.pid_file):
+                os.remove(self.pid_file)
+    
+    def check_status(self):
+        if os.path.exists(self.pid_file):
+            try:
+                with open(self.pid_file, 'r') as f:
+                    pid = int(f.read().strip())
+                
+                if psutil.pid_exists(pid):
+                    self.process = psutil.Process(pid)
+                    if not self.start_time:
+                        self.start_time = datetime.fromtimestamp(self.process.create_time())
+                    return True
+                else:
+                    os.remove(self.pid_file)
+            except Exception:
+                pass
+        return False
+    
+    @property
+    def uptime(self):
+        if not self.start_time:
+            return "N/A"
+        delta = datetime.now() - self.start_time
+        hours, remainder = divmod(delta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if delta.days > 0:
+            return f"{delta.days}d {hours:02}h:{minutes:02}m"
+        return f"{hours:02}:{minutes:02}:{seconds:02}"
+    
+    @property
+    def requests_per_second(self):
+        if not self.process or not isinstance(self.process, psutil.Process):
+            return "0.00"
+        
+        try:
+            connections = len([c for c in self.process.net_connections() if c.status == 'ESTABLISHED'])
+            return f"{connections:.2f}"
+        except Exception:
+            return "0.00"
+
+def request_sudo_permission():
+    if os.geteuid() != 0:
+        console.print(Panel.fit(
+            "[yellow]⚠️ SynqIt requires sudo privileges to manage system services[/yellow]\n\n"
+            "[white]This is needed to start Redis and PostgreSQL services.[/white]",
+            title="[bold blue]Sudo Required[/bold blue]", 
+            border_style="blue"
+        ))
+        
+        if not Confirm.ask("Continue with sudo?"):
+            console.print("[red]Operation cancelled.[/red]")
+            sys.exit(1)
+            
+        os.system('clear')
+        
+        python_path = sys.executable
+        args = ['sudo', python_path] + sys.argv
+        os.execvp('sudo', args)
+
+def check_cloudflare_status():
+    try:
+        output = subprocess.check_output(["pgrep", "-f", "cloudflared.*tunnel.*run"]).decode().strip()
+        if output:
+            return int(output.split()[0])
+    except Exception:
+        pass
+    return None
+
+def start_cloudflare():
+    console.print("[bold blue]Starting Cloudflare tunnel...[/bold blue]")
+    
+    env = os.environ.copy()
+    if 'SUDO_USER' in env:
+        
+        original_user = env['SUDO_USER']
+        original_home = f"/home/{original_user}"
+        env['HOME'] = original_home
+        env['USER'] = original_user
+    
+    return subprocess.Popen(["cloudflared", "tunnel", "run", "main"], env=env)
+
+def get_server_table(servers, cf_pid=None):
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Service")
+    table.add_column("Status")
+    table.add_column("Port")
+    table.add_column("Domain")
+    table.add_column("PID")
+    table.add_column("Uptime")
+    table.add_column("Req/sec")
+    
+    for server in servers:
+        is_running = server.check_status()
+        status = "[green]Running[/green]" if is_running else "[red]Stopped[/red]"
+        pid = str(server.process.pid) if server.process else "N/A"
+        
+        table.add_row(
+            server.name,
+            status,
+            str(server.port),
+            server.domain,
+            pid,
+            server.uptime if is_running else "N/A",
+            server.requests_per_second if is_running else "N/A"
+        )
+    
+    if cf_pid:
+        table.add_row(
+            "Cloudflare",
+            "[green]Running[/green]",
+            "N/A",
+            "*.saikat.in",
+            str(cf_pid),
+            "N/A",
+            "N/A"
+        )
+    
+    return table
+
+def main():
+    parser = argparse.ArgumentParser(description="Start SynqIt services")
+    parser.add_argument("--setup", action="store_true", help="Run setup before starting")
+    parser.add_argument("--no-cloudflare", action="store_true", help="Don't start Cloudflare tunnel")
+    parser.add_argument("--status", action="store_true", help="Show status without starting servers")
+    args = parser.parse_args()
+    
+    if args.setup:
+        setup()
+    
+    servers = [
+        Server("API Server", "services.server:app", 8000, "synqit.saikat.in"),
+        Server("Chat Server", "chat.server:app", 8080, "socket.saikat.in")
+    ]
+    
+    if args.status:
+        cf_pid = check_cloudflare_status()
+        console.print(get_server_table(servers, cf_pid))
+        return
+    
+    console.print(Panel.fit("[bold blue]SynqIt Server Manager[/bold blue]", 
+                          subtitle="Starting services..."))
+    
+    request_sudo_permission() 
+    
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console
+    ) as progress:
+        task = progress.add_task("[green]Starting services...", total=1)
+        
+        subprocess.run(["sudo", "systemctl", "start", "redis-server"])
+        subprocess.run(["sudo", "systemctl", "start", "postgresql"])
+        
+        progress.update(task, completed=1)
+    
+    try:      
+        for server in servers:
+            console.print(f"[bold green]Starting {server.name} on port {server.port}...[/bold green]")
+            server.start()
+            
+        cf_pid = None
+        if not args.no_cloudflare:
+            cf_process = start_cloudflare()
+            cf_pid = cf_process.pid
+        
+        console.print(get_server_table(servers, cf_pid))  
+        console.print(Panel("[yellow]Press Ctrl+C to stop servers. Use 'watch -n1 python main.py --status' to monitor.[/yellow]"))
+        
+        for server in servers:
+            if server.process:
+                server.process.wait()
+        
+    except KeyboardInterrupt:
+        console.print("\n[bold red]Shutting down servers...[/bold red]")
+        for server in servers:
+            server.stop()
+        
+        if cf_pid:
+            try:
+                os.kill(cf_pid, signal.SIGINT)
+            except Exception:
+                pass 
+        
+        time.sleep(1)
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()

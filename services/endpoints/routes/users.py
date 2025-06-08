@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, status, Query
 
 from pydantic import BaseModel
-from database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
+from ...database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
 
 router = APIRouter(tags=["Users"])
 class TrackInteraction(BaseModel):
@@ -96,7 +96,7 @@ async def check_email(email: str):
 
 
 @router.post("/api/v1/user/{user_id}/like", status_code=status.HTTP_201_CREATED)
-async def like_track(user_id: str, track: TrackInteraction):
+async def user_like_track(user_id: str, track: TrackInteraction):
     result = UserDB.like_track(user_id, track.track_id)
     if result["status"] == "error":
         raise HTTPException(

@@ -38,7 +38,6 @@ class PostgresClient:
             with self.conn.cursor() as cursor:
                 cursor.execute("SET TIME ZONE '+05:30';")
 
-            log.info("Connected to PostgreSQL database")
         except Exception as e:
             log.error(f"Failed to connect to PostgreSQL: {e}")
             raise

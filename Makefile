@@ -1,4 +1,4 @@
-APP_NAME = main:app
+APP_NAME = services.server:app
 SOCKET_NAME = chat.server:app
 SOCKET_PORT = 8080
 PORT = 8000
@@ -28,6 +28,11 @@ up: start-services
 	$(UVICORN) $(SOCKET_NAME) --port $(SOCKET_PORT) --reload &
 	echo $$! > .socket_pid
 	@echo "Both servers started."
+
+prod:
+	@echo "Starting production servers with main.py..."
+	$(PYTHON) main.py
+	
 
 up-detached: start-services
 	nohup $(UVICORN) $(APP_NAME) --port $(PORT) --reload > app.log 2>&1 &

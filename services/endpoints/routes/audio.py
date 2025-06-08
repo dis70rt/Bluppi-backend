@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Optional
 import logging
-from endpoints.core import get_redis
+from ...endpoints.core import get_redis
 
 import redis.asyncio as aioredis
 
-from app import yt_services
+from ...app import yt_services
 ytDLP = yt_services.YouTubeDLP()
 
 

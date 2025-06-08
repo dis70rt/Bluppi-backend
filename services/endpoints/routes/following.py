@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path, Query, status
 
-from database.db_users import UserDB
+from ...database.db_users import UserDB
 
 
 router = APIRouter(tags=["FollowController"])
