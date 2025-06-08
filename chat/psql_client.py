@@ -1,7 +1,7 @@
 import psycopg2
 import psycopg2.extras
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import os
 import logging
@@ -11,6 +11,8 @@ load_dotenv(override=True)
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
+
+IST_TIMEZONE = timezone(timedelta(hours=5, minutes=30))
 
 HOST = os.environ.get("DB_HOST", "localhost")
 PORT = os.environ.get("DB_PORT", 5432)
@@ -32,6 +34,10 @@ class PostgresClient:
 
             psycopg2.extras.register_uuid()
             self.conn.autocommit = True
+
+            with self.conn.cursor() as cursor:
+                cursor.execute("SET TIME ZONE '+05:30';")
+
             log.info("Connected to PostgreSQL database")
         except Exception as e:
             log.error(f"Failed to connect to PostgreSQL: {e}")
@@ -53,7 +59,7 @@ class PostgresClient:
             log.error(f"Failed to insert conversation: {e}")
             raise
     
-    def insert_conversation_participants(self, conversation_id: UUID, user_id: UUID):
+    def insert_conversation_participants(self, conversation_id: UUID, user_id: str):
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(
@@ -65,7 +71,7 @@ class PostgresClient:
             log.error(f"Failed to insert conversation participant: {e}")
             raise
             
-    def select_user_conversations(self, user_id: UUID):
+    def select_user_conversations(self, user_id: str):
         try:
             with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
                 cursor.execute(
@@ -100,7 +106,7 @@ class PostgresClient:
                     ref_msg = cursor.fetchone()
                     if ref_msg:
                         cursor.execute(
-                            """SELECT message_id, sender_id, message_text, created_at 
+                            """SELECT message_id, sender_id, message_text, created_at, type 
                                FROM messages WHERE conversation_id = %s AND created_at < %s 
                                ORDER BY created_at DESC LIMIT %s""",
                             (conversation_id, ref_msg["created_at"], limit)
@@ -108,7 +114,7 @@ class PostgresClient:
                         return cursor.fetchall()
                 
                 cursor.execute(
-                    """SELECT message_id, sender_id, message_text, created_at 
+                    """SELECT message_id, sender_id, message_text, created_at, type 
                        FROM messages WHERE conversation_id = %s
                        ORDER BY created_at DESC LIMIT %s""",
                     (conversation_id, limit)
@@ -122,7 +128,7 @@ class PostgresClient:
         try:
             with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
                 cursor.execute(
-                    """SELECT message_id, sender_id, message_text, created_at 
+                    """SELECT message_id, sender_id, message_text, created_at, type 
                        FROM messages WHERE conversation_id = %s AND created_at > %s 
                        ORDER BY created_at ASC""",
                     (conversation_id, since_timestamp)
@@ -144,21 +150,24 @@ class PostgresClient:
             log.error(f"Failed to select message info: {e}")
             raise
             
-    def insert_message(self, message_id: UUID, conversation_id: UUID, sender_id: UUID, 
-                      message_text: str, created_at: datetime):
+    def insert_message(self, message_id: UUID, conversation_id: UUID, sender_id: str, 
+                      message_text: str, created_at: datetime, type: str = "text"):
         try:
+            if created_at.tzinfo is None:
+                created_at = created_at.replace(tzinfo=IST_TIMEZONE)
+
             with self.conn.cursor() as cursor:
                 cursor.execute(
-                    """INSERT INTO messages (message_id, conversation_id, sender_id, message_text, created_at) 
-                       VALUES (%s, %s, %s, %s, %s)""",
-                    (message_id, conversation_id, sender_id, message_text, created_at)
+                    """INSERT INTO messages (message_id, conversation_id, sender_id, message_text, created_at, type) 
+                       VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (message_id, conversation_id, sender_id, message_text, created_at, type)
                 )
             log.info(f"Inserted message {message_id} in conversation {conversation_id}")
         except Exception as e:
             log.error(f"Failed to insert message: {e}")
             raise
             
-    def insert_message_status(self, message_id: UUID, user_id: UUID, status: str):
+    def insert_message_status(self, message_id: UUID, user_id: str, status: str):
         try:
             with self.conn.cursor() as cursor:
                 cursor.execute(
@@ -170,8 +179,11 @@ class PostgresClient:
             log.error(f"Failed to insert message status: {e}")
             raise
             
-    def update_message_status(self, message_id: UUID, user_id: UUID, status: str, updated_at: datetime):
+    def update_message_status(self, message_id: UUID, user_id: str, status: str, updated_at: datetime):
         try:
+            if updated_at.tzinfo is None:
+                updated_at = updated_at.replace(tzinfo=IST_TIMEZONE)
+
             with self.conn.cursor() as cursor:
                 cursor.execute(
                     "UPDATE message_status SET status = %s, updated_at = %s WHERE message_id = %s AND user_id = %s",
@@ -180,4 +192,54 @@ class PostgresClient:
             log.info(f"Updated message status for message {message_id} and user {user_id}")
         except Exception as e:
             log.error(f"Failed to update message status: {e}")
+            raise
+    
+    def conversation_exists(self, conversation_id: UUID) -> bool:
+        try:
+            with self.conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT EXISTS(SELECT 1 FROM conversations WHERE conversation_id = %s)",
+                    (conversation_id,)
+                )
+                result = cursor.fetchone()
+                return result[0] if result else False
+        except Exception as e:
+            log.error(f"Failed to check if conversation exists: {e}")
+            raise
+
+    def get_user_conversations(self, user_id: str):
+        try:
+            with self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+                # Get all conversation_ids for the user
+                cursor.execute(
+                    """
+                    SELECT c.conversation_id, c.conversation_name, c.is_group
+                    FROM conversations c
+                    JOIN conversation_participants cp ON c.conversation_id = cp.conversation_id
+                    WHERE cp.user_id = %s
+                    """,
+                    (user_id,)
+                )
+                conv_rows = cursor.fetchall()
+                conversations = []
+                for row in conv_rows:
+                    conv_id = row["conversation_id"]
+                    # Get all participants except the user
+                    cursor.execute(
+                        """
+                        SELECT user_id FROM conversation_participants
+                        WHERE conversation_id = %s AND user_id != %s
+                        """,
+                        (conv_id, user_id)
+                    )
+                    participants = [r["user_id"] for r in cursor.fetchall()]
+                    conversations.append({
+                        "conversation_id": str(conv_id),
+                        "conversation_name": row["conversation_name"],
+                        "is_group": row["is_group"],
+                        "participants": participants
+                    })
+                return conversations
+        except Exception as e:
+            log.error(f"Failed to get user conversations with participants: {e}")
             raise
