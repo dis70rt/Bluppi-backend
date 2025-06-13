@@ -1,0 +1,51 @@
+syntax = "proto3";
+package ListeningParty;
+
+import "protobuf/common.proto";
+import "google/protobuf/timestamp.proto";
+
+message PlaybackState {
+    string room_id = 1;
+    string current_track_id = 2;
+    int32 position_ms = 3;
+    PlaybackStatus status = 4;
+    google.protobuf.Timestamp updated_at = 5;
+}
+
+message PlayRequest {
+    string room_id = 1;
+    string track_id = 2; 
+    int32 position_ms = 3; 
+}
+
+message PauseRequest {
+    string room_id = 1;
+}
+
+message SeekRequest {
+    string room_id = 1;
+    int32 position_ms = 2;
+}
+
+message SkipRequest {
+    string room_id = 1;
+}
+
+message GetPlaybackStateRequest {
+    string room_id = 1;
+}
+
+message SyncPlaybackRequest {
+    string room_id = 1;
+    string user_id = 2; 
+    
+}
+
+service PlaybackService {
+    rpc Play(PlayRequest) returns (PlaybackState);
+    rpc Pause(PauseRequest) returns (PlaybackState);
+    rpc Seek(SeekRequest) returns (PlaybackState);
+    rpc Skip(SkipRequest) returns (PlaybackState);
+    rpc GetPlaybackState(GetPlaybackStateRequest) returns (PlaybackState);
+    rpc SyncPlayback(SyncPlaybackRequest) returns (PlaybackState);
+}

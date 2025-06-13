@@ -1,0 +1,77 @@
+syntax = "proto3";
+package ListeningParty;
+
+import "protobuf/common.proto";
+import "google/protobuf/timestamp.proto";
+
+message PlaybackEventLog {
+    int64 event_id = 1;
+    string room_id = 2;
+    string user_id = 3;
+    ListeningParty.EventType event_type = 4;
+    string event_payload = 5;
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+
+message StreamRoomEventsRequest {
+    string room_id = 1;
+}
+
+message RoomEvent {
+    enum EventCategory {
+        EVENT_CATEGORY_UNSPECIFIED = 0;
+        USER_JOINED = 1;
+        USER_LEFT = 2;
+        ROOM_SETTINGS_UPDATED = 3;
+    }
+    string event_id = 1; 
+    string room_id = 2;
+    EventCategory category = 3;
+    string user_id = 4; 
+    string details_json = 5; 
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+message StreamPlaybackEventsRequest {
+    string room_id = 1;
+}
+
+message PlaybackEvent {
+    string room_id = 1;
+    string user_id = 2;         
+    ListeningParty.EventType event_type = 3;   
+    string track_id = 4;        
+    int32 position_ms = 5;      
+    google.protobuf.Timestamp timestamp = 6;
+}
+
+message LogEventRequest {
+    string room_id = 1;
+    string user_id = 2;
+    ListeningParty.EventType event_type = 3; 
+    string event_payload = 4; 
+}
+
+message GetEventHistoryRequest {
+    string room_id = 1;
+    google.protobuf.Timestamp start_time = 2; 
+    google.protobuf.Timestamp end_time = 3;   
+    int32 page_size = 4;                      
+    string page_token = 5;                    
+}
+
+message GetEventHistoryResponse {
+    repeated PlaybackEventLog events = 1;
+    string next_page_token = 2;               
+}
+
+service EventStreamService {
+    rpc StreamRoomEvents(StreamRoomEventsRequest) returns (stream RoomEvent);
+    rpc StreamPlaybackEvents(StreamPlaybackEventsRequest) returns (stream PlaybackEvent);
+}
+
+service EventLogService {
+    rpc LogEvent(LogEventRequest) returns (PlaybackEventLog);
+    rpc GetEventHistory(GetEventHistoryRequest) returns (GetEventHistoryResponse);
+}

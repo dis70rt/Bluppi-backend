@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 
-from ..database.config import SynqItDB
+from ...database import SynqItDB
 
 
 class UserBase(BaseModel):

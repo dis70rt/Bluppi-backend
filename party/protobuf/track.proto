@@ -1,0 +1,30 @@
+syntax = "proto3";
+package ListeningParty;
+
+message Track {
+    string track_id = 1;
+    string title = 2;
+    string artist = 3;
+    string image_url = 4;
+    int32 duration_ms = 5;
+}
+
+message GetTrackRequest {
+    string track_id = 1;
+}
+
+message SearchTracksRequest {
+    string query = 1;
+    int32 page_size = 2;  
+    string page_token = 3;  
+}
+
+message SearchTracksResponse {
+    repeated Track tracks = 1;
+    string next_page_token = 2;
+}
+
+service TrackService {
+    rpc GetTrack(GetTrackRequest) returns (Track);
+    rpc SearchTracks(SearchTracksRequest) returns (SearchTracksResponse);
+}

@@ -1,9 +1,7 @@
 import os
-from typing import List
 import psycopg2
-from dotenv import load_dotenv
-from pydantic import BaseModel
 
+from dotenv import load_dotenv
 load_dotenv(override=True)
 
 class SynqItDB:

@@ -3,7 +3,7 @@ import psycopg2
 from pydantic import BaseModel
 from datetime import datetime
 
-from ..database.config import SynqItDB
+from ...database import SynqItDB
 
 
 class Track(BaseModel):

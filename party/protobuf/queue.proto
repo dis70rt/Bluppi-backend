@@ -1,0 +1,43 @@
+syntax = "proto3";
+package ListeningParty;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+message RoomQueueItem {
+    string room_id = 1;
+    int32 position = 2;
+    string track_id = 3;
+    string added_by = 4;
+    google.protobuf.Timestamp added_at = 5;
+}
+
+message AddToQueueRequest {
+    string room_id = 1;
+    string track_id = 2;
+    string user_id = 3;
+}
+
+message RemoveFromQueueRequest {
+    string room_id = 1;
+    string track_id = 2;
+}
+
+message GetQueueRequest {
+    string room_id = 1;
+}
+
+message GetQueueResponse {
+    repeated RoomQueueItem items = 1;
+}
+
+message ClearQueueRequest {
+    string room_id = 1;
+}
+
+service QueueService {
+    rpc AddToQueue(AddToQueueRequest) returns (RoomQueueItem);
+    rpc RemoveFromQueue(RemoveFromQueueRequest) returns (google.protobuf.Empty);
+    rpc GetQueue(GetQueueRequest) returns (GetQueueResponse);
+    rpc ClearQueue(ClearQueueRequest) returns (google.protobuf.Empty);
+}
