@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path, status, Query
 
 from pydantic import BaseModel
-from ...database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
+from services.database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
 
 router = APIRouter(tags=["Users"])
 class TrackInteraction(BaseModel):

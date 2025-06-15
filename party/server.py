@@ -11,11 +11,14 @@ class ListeningParty(room_pb2_grpc.RoomServiceServicer):
     
     def CreateRoom(self, request, context):
         try:
+            if request.visibility == 0:
+                visibility = "PUBLIC"
+            else: visibility = "PRIVATE"
             room_id = self.room_manager.create_room(
                 name=request.name,
                 host_user_id=request.host_user_id,
                 description=request.description,
-                visibility=request.visibility.name,  # Convert enum to string
+                visibility= visibility, 
                 invite_only=request.invite_only
             )
             

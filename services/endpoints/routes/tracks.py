@@ -1,16 +1,15 @@
 import json
 from fastapi import APIRouter, Depends, Query, HTTPException, Path
-from typing import Optional, List
+from typing import Optional
 import logging
 import httpx
 
-from ...app.models import TrackSearchResponse
-from ...app.recommendation import RecommendationResponse, recommend_track
-from ...app.services import TrackRepository
-from ...app import logic
-from ....database import SynqItDB
-from ...database.db_tracks import Track, TrackDB
-from ...endpoints.core import get_http_client, get_redis, get_track_repository
+from services.app.models import TrackSearchResponse
+from services.app.recommendation import RecommendationResponse, recommend_track
+from services.app.services import TrackRepository
+from services.app import logic
+from services.database.db_tracks import Track, TrackDB
+from services.endpoints.core import get_http_client, get_redis, get_track_repository
 from pydantic import BaseModel
 
 import redis.asyncio as aioredis

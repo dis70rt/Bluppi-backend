@@ -160,5 +160,9 @@ CREATE INDEX idx_rooms_public_active ON rooms(visibility, status, created_at DES
 
 ALTER TABLE rooms ADD room_code VARCHAR(7) UNIQUE NOT NULL;
 
+ALTER DATABASE synqit_music REFRESH COLLATION VERSION;
+
 CREATE OR REPLACE FUNCTION status_change_of_room()
 RETURN TRIGGER AS $$
+
+

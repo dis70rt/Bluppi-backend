@@ -1,0 +1,106 @@
+syntax = "proto3";
+package ListeningParty;
+
+import "protobuf/common.proto";
+import "protobuf/track.proto";
+import "protobuf/user.proto";
+import "protobuf/room.proto";
+import "protobuf/playback.proto";
+import "google/protobuf/timestamp.proto";
+
+
+message RoomStreamUpdate {
+    string room_id = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    
+    oneof update_type {
+        PlaybackUpdate playback_update = 3;
+        MemberUpdate member_update = 4;
+        RoomSettingsUpdate room_settings_update = 5;
+        RoomStatusUpdate room_status_update = 6;
+    }
+}
+
+message PlaybackUpdate {
+    oneof playback_event {
+        TrackChangeEvent track_change = 1;
+        PlayStateEvent play_state = 2;
+        SeekEvent seek = 3;
+        SkipEvent skip = 4;
+    }
+}
+
+message TrackChangeEvent {
+    Track current_track = 1;
+    int32 position_ms = 2;
+}
+
+message PlayStateEvent {
+    PlaybackStatus status = 1;
+    int32 position_ms = 2;
+}
+
+message SeekEvent {
+    int32 position_ms = 1;
+}
+
+message SkipEvent {
+    Track new_track = 1;
+}
+
+message MemberUpdate {
+    oneof member_event {
+        MemberJoinEvent member_join = 1;
+        MemberLeaveEvent member_leave = 2;
+        MemberRoleChangeEvent role_change = 3;
+    }
+}
+
+message MemberJoinEvent {
+    User user = 1;
+    RoomMemberRole role = 2;
+}
+
+message MemberLeaveEvent {
+    string user_id = 1;
+}
+
+message MemberRoleChangeEvent {
+    string user_id = 1;
+    RoomMemberRole new_role = 2;
+}
+
+message RoomSettingsUpdate {
+    optional string name = 1;
+    optional string description = 2;
+    optional RoomVisibility visibility = 3;
+    optional bool invite_only = 4;
+}
+
+message RoomStatusUpdate {
+    RoomStatus status = 1;  // ACTIVE, INACTIVE, CLOSED
+    optional string reason = 2;  // "host_disconnected", "host_returned", etc.
+}
+
+message JoinRoomStreamRequest {
+    string room_id = 1;
+    string user_id = 2;
+}
+
+message RoomStreamSnapshot {
+    Room room_info = 1;
+    PlaybackState current_playback = 2;
+    Track current_track = 3;
+    repeated User members = 4;
+    int32 member_count = 5;
+}
+
+message StreamRoomUpdatesRequest {
+    string room_id = 1;
+    string user_id = 2;
+}
+
+service RoomStreamService {
+    rpc JoinRoomStream(JoinRoomStreamRequest) returns (RoomStreamSnapshot);
+    rpc StreamRoomUpdates(StreamRoomUpdatesRequest) returns (stream RoomStreamUpdate);
+}

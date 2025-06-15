@@ -1,9 +1,8 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 import psycopg2
 from pydantic import BaseModel
-from datetime import datetime
 
-from ...database import SynqItDB
+from synqit_db import SynqItDB
 
 
 class Track(BaseModel):

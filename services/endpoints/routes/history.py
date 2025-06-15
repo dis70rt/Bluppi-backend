@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Path, Query, status
 
-from ...database.db_tracks import TrackDB
-from ...database.db_users import UserDB
-from ...endpoints.routes.tracks import TrackInteraction
+from services.database.db_tracks import TrackDB
+from services.database.db_users import UserDB
+from services.endpoints.routes.tracks import TrackInteraction
 
 router = APIRouter(tags=["History"])
 
