@@ -1,8 +1,10 @@
 import os
 import psycopg2
+import psycopg2.extras
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
+psycopg2.extras.register_uuid()
 
 class SynqItDB:
     def __init__(self):

@@ -23,4 +23,5 @@ dependencies = [
     "rich>=14.0.0",
     "uvicorn>=0.34.2",
     "yt-dlp>=2025.4.30",
+    "ytmusicapi>=1.10.3",
 ]

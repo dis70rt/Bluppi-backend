@@ -8,11 +8,12 @@ CREATE TABLE rooms (
     id TEXT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    status room_status DEFAULT 'ACTIVE',
-    visibility room_visibility DEFAULT 'PUBLIC',
-    invite_only BOOLEAN DEFAULT FALSE,
     host_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    current_track_id INT REFERENCES tracks(id) ON DELETE SET NULL,
+    room_code VARCHAR(7) UNIQUE NOT NULL,
+    status room_status NOT NULL DEFAULT 'ACTIVE',
+    visibility room_visibility NOT NULL DEFAULT 'PUBLIC',
+    max_members INT DEFAULT 50,
+    current_track_id UUID REFERENCES tracks(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,7 +33,7 @@ CREATE TABLE room_queue (
     id TEXT PRIMARY KEY,
     room_id TEXT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
-    track_id INT NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+    track_id UUID NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
     added_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(room_id, position)
@@ -40,7 +41,7 @@ CREATE TABLE room_queue (
 
 CREATE TABLE playback_state (
     room_id TEXT PRIMARY KEY REFERENCES rooms(id) ON DELETE CASCADE,
-    current_track_id INT REFERENCES tracks(id) ON DELETE SET NULL,
+    current_track_id UUID REFERENCES tracks(id) ON DELETE SET NULL,
     position_ms INTEGER DEFAULT 0 CHECK (position_ms >= 0),
     status playback_status DEFAULT 'PAUSED',
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -158,11 +159,4 @@ CREATE INDEX idx_rooms_active ON rooms(id, name) WHERE status = 'ACTIVE';
 CREATE INDEX idx_rooms_public_active ON rooms(visibility, status, created_at DESC) 
     WHERE visibility = 'PUBLIC' AND status = 'ACTIVE';
 
-ALTER TABLE rooms ADD room_code VARCHAR(7) UNIQUE NOT NULL;
-
 ALTER DATABASE synqit_music REFRESH COLLATION VERSION;
-
-CREATE OR REPLACE FUNCTION status_change_of_room()
-RETURN TRIGGER AS $$
-
-

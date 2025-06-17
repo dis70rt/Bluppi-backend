@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path, Query, status
 
+import uuid
 from services.database.db_tracks import TrackDB
 from services.database.db_users import UserDB
 from services.endpoints.routes.tracks import TrackInteraction

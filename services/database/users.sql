@@ -23,7 +23,7 @@ CREATE TABLE follows (
 CREATE TABLE history_tracks (
   id         BIGSERIAL    PRIMARY KEY,
   user_id    TEXT         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  track_id   BIGINT       NOT NULL,
+  track_id   UUID         NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
   played_at  TIMESTAMPTZ  NOT NULL
 );
 
@@ -44,10 +44,9 @@ CREATE TYPE track_interaction_type AS ENUM (
 
 CREATE TABLE user_track (
   user_id          TEXT                    NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  track_id         BIGINT                  NOT NULL,
+  track_id         UUID                    NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
   interaction_type track_interaction_type  NOT NULL,
   interacted_at    TIMESTAMPTZ             NOT NULL DEFAULT now(),
-  play_count       INT                     NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, track_id, interaction_type)
 );
 
@@ -57,22 +56,16 @@ ALTER TABLE users
   ADD COLUMN following_count INT NOT NULL DEFAULT 0;
 
 
-CREATE FUNCTION trg_update_follow_counts() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION trg_update_follow_counts() RETURNS trigger AS $$
 BEGIN
   IF (TG_OP = 'INSERT') THEN
-    UPDATE users
-      SET follower_count  = follower_count + 1
-      WHERE id = NEW.followee_id;
-    UPDATE users
-      SET following_count = following_count + 1
-      WHERE id = NEW.follower_id;
+    UPDATE users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
+    UPDATE users SET follower_count = follower_count + 1 WHERE id = NEW.followee_id;
+    RETURN NEW;
   ELSIF (TG_OP = 'DELETE') THEN
-    UPDATE users
-      SET follower_count  = follower_count - 1
-      WHERE id = OLD.followee_id;
-    UPDATE users
-      SET following_count = following_count - 1
-      WHERE id = OLD.follower_id;
+    UPDATE users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+    UPDATE users SET follower_count = follower_count - 1 WHERE id = OLD.followee_id;
+    RETURN OLD;
   END IF;
   RETURN NULL;
 END;

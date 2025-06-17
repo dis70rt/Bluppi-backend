@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, HttpUrl, field_validator, computed_field
-from typing import Optional, List, Any
+from typing import Optional, List, Any      
+import uuid
 import logging
 
 log = logging.getLogger(__name__)
@@ -43,7 +44,7 @@ def _get_lastfm_image_url(images: Optional[List[dict]]) -> Optional[str]:
         return None
 
 class Track(BaseModel):
-    trackId: Optional[int] = None
+    trackId: Optional[uuid.UUID] = None
     artistName: str = Field(default="Unknown Artist")
     trackName: str = Field(default="Unknown Track")
     albumName: Optional[str] = None
@@ -52,9 +53,10 @@ class Track(BaseModel):
     videoId: Optional[str] = None
     # audioUrl: Optional[HttpUrl] = None
     genres: List[str] = Field(default_factory=list)
+    duration: Optional[int] = None
     listeners: Optional[int] = None
     playcount: Optional[int] = None
-    lastFmUrl: Optional[HttpUrl] = None
+    popularity: int = Field(default=0)
 
     @field_validator("listeners", "playcount", mode="before")
     @classmethod
@@ -67,7 +69,7 @@ class Track(BaseModel):
             )
         return parsed
 
-    @field_validator("imageUrl", "previewUrl", "lastFmUrl", mode="before")
+    @field_validator("imageUrl", "previewUrl", mode="before")
     @classmethod
     def validate_url(cls, value: Any) -> Optional[str]:
         if isinstance(value, str) and value.strip():
@@ -192,4 +194,8 @@ class Track(BaseModel):
 
 class TrackSearchResponse(BaseModel):
     results: List[Track]
-    suggestedTracks: List[Track]
+    suggestedTracks: List[Track] = Field(default_factory=list) 
+    query: str
+    limit: int
+    offset: int = 0
+    total: int = 0

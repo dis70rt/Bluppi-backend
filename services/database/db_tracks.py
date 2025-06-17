@@ -1,12 +1,11 @@
 from typing import List, Dict, Any
 import psycopg2
 from pydantic import BaseModel
-
+import uuid
 from synqit_db import SynqItDB
 
-
 class Track(BaseModel):
-    id: int
+    id: uuid.UUID
     title: str
     artist: str
     album: str
@@ -64,7 +63,7 @@ class TrackDB:
                 }
 
     @staticmethod
-    def read(track_id: int) -> Dict[str, Any]:
+    def read(track_id: uuid.UUID) -> Dict[str, Any]:
         with SynqItDB() as db:
             try:
                 query = "SELECT * FROM tracks WHERE id = %s"
@@ -75,7 +74,7 @@ class TrackDB:
                         "status": "success",
                         "status_code": 200,
                         "track": {
-                            "trackId": result[0],
+                            "trackId": str(result[0]),
                             "trackName": result[1],
                             "artistName": result[2],
                             "albumName": result[3],
@@ -125,7 +124,7 @@ class TrackDB:
                 for row in results:
                     tracks.append(
                         {
-                            "trackId": row[0],
+                            "trackId": str(row[0]),
                             "trackName": row[1],
                             "artistName": row[2],
                             "albumName": row[3],
@@ -163,10 +162,9 @@ class TrackDB:
                 }
 
     @staticmethod
-    def add_track_history(user_id: str, track_id: int) -> Dict[str, Any]:
+    def add_track_history(user_id: str, track_id: str) -> Dict[str, Any]:
         with SynqItDB() as db:
             try:
-
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
                     return {
@@ -191,17 +189,17 @@ class TrackDB:
                     (user_id, track_id),
                 )
 
-                db.cursor.execute(
-                    """
-                    INSERT INTO user_track (user_id, track_id, interaction_type, play_count)
-                    VALUES (%s, %s, 'most_played', 1)
-                    ON CONFLICT (user_id, track_id, interaction_type)
-                    DO UPDATE SET 
-                        play_count = user_track.play_count + 1,
-                        interacted_at = NOW()
-                    """,
-                    (user_id, track_id),
-                )
+                # db.cursor.execute(
+                #     """
+                #     INSERT INTO user_track (user_id, track_id, interaction_type, play_count)
+                #     VALUES (%s, %s, 'most_played', 1)
+                #     ON CONFLICT (user_id, track_id, interaction_type)
+                #     DO UPDATE SET 
+                #         play_count = user_track.play_count + 1,
+                #         interacted_at = NOW()
+                #     """,
+                #     (user_id, track_id),
+                # )
 
                 db.cursor.execute(
                     """
@@ -260,7 +258,7 @@ class TrackDB:
                 for row in db.cursor.fetchall():
                     history.append(
                         {
-                            "track_id": row[0],
+                            "track_id": str(row[0]),
                             "played_at": row[1],
                             "title": row[2],
                             "artist": row[3],
@@ -288,7 +286,7 @@ class TrackDB:
                 }
 
     @staticmethod
-    def like_track(user_id: str, track_id: int) -> Dict[str, Any]:
+    def like_track(user_id: str, track_id: uuid.UUID) -> Dict[str, Any]:
         with SynqItDB() as db:
             try:
 
@@ -340,7 +338,7 @@ class TrackDB:
                 }
 
     @staticmethod
-    def unlike_track(user_id: str, track_id: int) -> Dict[str, Any]:
+    def unlike_track(user_id: str, track_id: uuid.UUID) -> Dict[str, Any]:
         with SynqItDB() as db:
             try:
 
@@ -412,7 +410,7 @@ class TrackDB:
                 for row in db.cursor.fetchall():
                     liked_tracks.append(
                         {
-                            "track_id": row[0],
+                            "track_id": str(row[0]),
                             "liked_at": row[1],
                             "title": row[2],
                             "artist": row[3],
@@ -424,7 +422,7 @@ class TrackDB:
                 db.cursor.execute(
                     """
                     SELECT COUNT(*) FROM user_track 
-                    WHERE user_id = %s AND interaction_type = 'liked'
+                    WHERE user_id = %s AND ut.interaction_type = 'liked'
                     """,
                     (user_id,),
                 )
@@ -463,7 +461,7 @@ class TrackDB:
                 for row in db.cursor.fetchall():
                     popular_tracks.append(
                         {
-                            "trackId": row[0],
+                            "trackId": str(row[0]),
                             "trackName": row[1],
                             "artistName": row[2],
                             "albumName": row[3],
@@ -513,7 +511,7 @@ class TrackDB:
                 for row in db.cursor.fetchall():
                     genre_tracks.append(
                         {
-                            "trackId": row[0],
+                            "trackId": str(row[0]),
                             "trackName": row[1],
                             "artistName": row[2],
                             "albumName": row[3],
@@ -578,9 +576,8 @@ class TrackDB:
                 }
             except Exception as e:
                 db.connection.rollback()
-                print(f"Error clearing history: {str(e)}")
                 return {
                     "status": "error",
                     "status_code": 500,
                     "message": f"Error clearing history: {str(e)}"
-                }    
+                }

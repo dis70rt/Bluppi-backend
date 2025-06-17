@@ -1,49 +1,71 @@
 import grpc
+import signal
+import sys
+import logging
 from concurrent import futures
 
-from protobuf import room_pb2
+from Service.roomService import RoomService
+from Service.roomStreamService import RoomStreamService
 from protobuf import room_pb2_grpc
-from roomManager import RoomManager
+from protobuf import streaming_pb2_grpc
 
-class ListeningParty(room_pb2_grpc.RoomServiceServicer):
-    def __init__(self):
-        self.room_manager = RoomManager()
-    
-    def CreateRoom(self, request, context):
+class SynqItServer:
+    def __init__(self, port=50051):
+        self.port = port
+        self.server = None
+        
+    def start(self):
+        self.server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=50),
+            options=[
+                ('grpc.keepalive_time_ms', 30000),
+                ('grpc.keepalive_timeout_ms', 10000),
+                ('grpc.keepalive_permit_without_calls', True),
+                ('grpc.http2.max_pings_without_data', 0),
+                ('grpc.http2.min_time_between_pings_ms', 10000),
+                ('grpc.http2.min_ping_interval_without_data_ms', 300000),
+                ('grpc.max_send_message_length', 4 * 1024 * 1024),
+                ('grpc.max_receive_message_length', 4 * 1024 * 1024),
+            ]
+        )
+        
+        room_pb2_grpc.add_RoomServiceServicer_to_server(RoomService(), self.server)
+        streaming_pb2_grpc.add_RoomStreamServiceServicer_to_server(RoomStreamService(), self.server)
+        
+        listen_addr = f'[::]:{self.port}'
+        self.server.add_insecure_port(listen_addr)
+        
+        logging.info(f"Starting SynqIt server on {listen_addr}")
+        logging.info("Services available:")
+        logging.info("  - RoomService (room management)")
+        logging.info("  - RoomStreamService (real-time streaming)")
+        
+        self.server.start()
+        
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+        
         try:
-            if request.visibility == 0:
-                visibility = "PUBLIC"
-            else: visibility = "PRIVATE"
-            room_id = self.room_manager.create_room(
-                name=request.name,
-                host_user_id=request.host_user_id,
-                description=request.description,
-                visibility= visibility, 
-                invite_only=request.invite_only
-            )
-            
-            return room_pb2.Room(
-                id=room_id,
-                name=request.name,
-                description=request.description,
-                host_user_id=request.host_user_id,
-                visibility=request.visibility,
-                invite_only=request.invite_only
-            )
-
-        except Exception as e:
-            context.set_details(f"Failed to create room: {str(e)}")
-            context.set_code(grpc.StatusCode.INTERNAL)
-            return room_pb2.Room()
+            self.server.wait_for_termination()
+        except KeyboardInterrupt:
+            logging.info("Received interrupt signal")
+        finally:
+            self.stop()
+    
+    def stop(self):
+        if self.server:
+            logging.info("Stopping server...")
+            self.server.stop(grace=5)
+            logging.info("Server stopped")
+    
+    def _signal_handler(self, signum, frame):
+        logging.info(f"Received signal {signum}")
+        self.stop()
+        sys.exit(0)
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    room_pb2_grpc.add_RoomServiceServicer_to_server(ListeningParty(), server)
-    listen_addr = '[::]:50051'
-    server.add_insecure_port(listen_addr)
-    print(f"Starting server on {listen_addr}")
+    server = SynqItServer()
     server.start()
-    server.wait_for_termination()
 
 if __name__ == '__main__':
     serve()

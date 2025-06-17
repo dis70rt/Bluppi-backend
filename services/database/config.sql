@@ -1,5 +1,5 @@
 CREATE TABLE tracks (
-    id INT PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title VARCHAR(255) NOT NULL,
     artist VARCHAR(255) NOT NULL,
     album VARCHAR(255),
@@ -11,5 +11,4 @@ CREATE TABLE tracks (
     listeners INT DEFAULT 0,
     play_count INT DEFAULT 0,
     popularity INT DEFAULT 0
-)
-
+);
