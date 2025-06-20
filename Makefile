@@ -1,4 +1,4 @@
-APP_NAME = services.server:app
+APP_NAME = app.server:app
 SOCKET_NAME = chat.server:app
 SOCKET_PORT = 8080
 PORT = 8000

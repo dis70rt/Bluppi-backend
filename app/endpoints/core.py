@@ -3,19 +3,19 @@ import logging
 from fastapi import Depends, HTTPException
 
 import redis.asyncio as aioredis
-from ..app.services import TrackRepository
+from ..utils.services import TrackRepository
 
 log = logging.getLogger(__name__)
 
 async def get_http_client() -> httpx.AsyncClient:
-    from services.server import app
+    from app.server import app
     if not hasattr(app.state, "http_client") or not app.state.http_client:
         log.error("HTTP client unavailable")
         raise HTTPException(500, "Internal server error: HTTP client unavailable")
     return app.state.http_client
 
 async def get_redis() -> aioredis.Redis:
-    from services.server import app
+    from app.server import app
     if not hasattr(app.state, "redis") or app.state.redis is None:
         log.error("Redis client unavailable")
         raise HTTPException(500, "Internal server error: Redis unavailable")

@@ -5,7 +5,7 @@ from ...endpoints.core import get_redis
 
 import redis.asyncio as aioredis
 
-from ...app import yt_services
+from ...utils import yt_services
 ytDLP = yt_services.YouTubeDLP()
 
 

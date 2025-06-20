@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 import psycopg2
 from pydantic import BaseModel
 import uuid
-from synqit_db import SynqItDB
+from app.utils.synqit_db import SynqItDB
 
 class Track(BaseModel):
     id: uuid.UUID

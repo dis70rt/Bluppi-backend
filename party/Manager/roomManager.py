@@ -1,7 +1,5 @@
-import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from synqit_db import SynqItDB
-from redisManager import RedisManager
+from .synqit import SynqItDB
+from .redisManager import RedisManager
 import uuid
 import time
 import hashlib

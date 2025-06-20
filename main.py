@@ -181,7 +181,7 @@ def main():
         setup()
     
     servers = [
-        Server("API Server", "services.server:app", 8000, "synqit.saikat.in"),
+        Server("API Server", "app.server:app", 8000, "synqit.saikat.in"),
         Server("Chat Server", "chat.server:app", 8080, "socket.saikat.in")
     ]
     

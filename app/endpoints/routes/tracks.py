@@ -1,18 +1,18 @@
 import json
 from fastapi import APIRouter, Depends, Query, HTTPException, Path
-from typing import Optional, Union
+from typing import Optional
 import logging
 import httpx
 import uuid
 
-from services.app.models import TrackSearchResponse
-from services.app.recommendation import RecommendationResponse, recommend_track
-from services.app.services import TrackRepository
-from services.app import logic
-from services.app.ytmusicService import YTMusicService
-from services.database.db_tracks import Track, TrackDB
-from services.endpoints.core import get_http_client, get_redis, get_track_repository
-from services.uuid_helper import str_to_uuid
+from app.utils.models import TrackSearchResponse
+from app.utils.recommendation import RecommendationResponse, recommend_track
+# from utils.services import TrackRepository
+# from utils import logic
+from app.utils.ytmusicService import YTMusicService
+from app.database.db_tracks import Track, TrackDB
+from app.endpoints.core import get_http_client, get_redis
+from app.utils.uuid_helper import str_to_uuid
 from pydantic import BaseModel
 
 import redis.asyncio as aioredis

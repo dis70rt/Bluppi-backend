@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Path, status, Query
 
 from pydantic import BaseModel
-from services.database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
-from services.uuid_helper import str_to_uuid
+from app.database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
+from app.utils.uuid_helper import str_to_uuid
 
 router = APIRouter(tags=["Users"])
 

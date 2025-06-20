@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import psycopg2
 import uuid 
-from synqit_db import SynqItDB
+from app.utils.synqit_db import SynqItDB
 
 
 class UserBase(BaseModel):
