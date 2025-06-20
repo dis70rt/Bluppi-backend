@@ -1,151 +1,75 @@
-from protobuf import common_pb2 as _common_pb2
 from protobuf import track_pb2 as _track_pb2
-from protobuf import user_pb2 as _user_pb2
-from protobuf import room_pb2 as _room_pb2
-from protobuf import playback_pb2 as _playback_pb2
-from google.protobuf import timestamp_pb2 as _timestamp_pb2
-from google.protobuf.internal import containers as _containers
+from protobuf import common_pb2 as _common_pb2
+from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from collections.abc import Mapping as _Mapping
 from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class RoomStreamUpdate(_message.Message):
-    __slots__ = ("room_id", "timestamp", "playback_update", "member_update", "room_settings_update", "room_status_update")
-    ROOM_ID_FIELD_NUMBER: _ClassVar[int]
-    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
-    PLAYBACK_UPDATE_FIELD_NUMBER: _ClassVar[int]
-    MEMBER_UPDATE_FIELD_NUMBER: _ClassVar[int]
-    ROOM_SETTINGS_UPDATE_FIELD_NUMBER: _ClassVar[int]
-    ROOM_STATUS_UPDATE_FIELD_NUMBER: _ClassVar[int]
-    room_id: str
-    timestamp: _timestamp_pb2.Timestamp
-    playback_update: PlaybackUpdate
-    member_update: MemberUpdate
-    room_settings_update: RoomSettingsUpdate
-    room_status_update: RoomStatusUpdate
-    def __init__(self, room_id: _Optional[str] = ..., timestamp: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., playback_update: _Optional[_Union[PlaybackUpdate, _Mapping]] = ..., member_update: _Optional[_Union[MemberUpdate, _Mapping]] = ..., room_settings_update: _Optional[_Union[RoomSettingsUpdate, _Mapping]] = ..., room_status_update: _Optional[_Union[RoomStatusUpdate, _Mapping]] = ...) -> None: ...
+class SyncMeasurement(_message.Message):
+    __slots__ = ("client_timestamp_ms", "server_receive_ms", "server_send_ms", "client_receive_ms", "client_id")
+    CLIENT_TIMESTAMP_MS_FIELD_NUMBER: _ClassVar[int]
+    SERVER_RECEIVE_MS_FIELD_NUMBER: _ClassVar[int]
+    SERVER_SEND_MS_FIELD_NUMBER: _ClassVar[int]
+    CLIENT_RECEIVE_MS_FIELD_NUMBER: _ClassVar[int]
+    CLIENT_ID_FIELD_NUMBER: _ClassVar[int]
+    client_timestamp_ms: int
+    server_receive_ms: int
+    server_send_ms: int
+    client_receive_ms: int
+    client_id: str
+    def __init__(self, client_timestamp_ms: _Optional[int] = ..., server_receive_ms: _Optional[int] = ..., server_send_ms: _Optional[int] = ..., client_receive_ms: _Optional[int] = ..., client_id: _Optional[str] = ...) -> None: ...
 
-class PlaybackUpdate(_message.Message):
-    __slots__ = ("track_change", "play_state", "seek", "skip")
-    TRACK_CHANGE_FIELD_NUMBER: _ClassVar[int]
-    PLAY_STATE_FIELD_NUMBER: _ClassVar[int]
-    SEEK_FIELD_NUMBER: _ClassVar[int]
-    SKIP_FIELD_NUMBER: _ClassVar[int]
-    track_change: TrackChangeEvent
-    play_state: PlayStateEvent
-    seek: SeekEvent
-    skip: SkipEvent
-    def __init__(self, track_change: _Optional[_Union[TrackChangeEvent, _Mapping]] = ..., play_state: _Optional[_Union[PlayStateEvent, _Mapping]] = ..., seek: _Optional[_Union[SeekEvent, _Mapping]] = ..., skip: _Optional[_Union[SkipEvent, _Mapping]] = ...) -> None: ...
+class SyncResponse(_message.Message):
+    __slots__ = ("server_timestamp_ms", "recommended_adjustment", "estimated_offset_ms")
+    SERVER_TIMESTAMP_MS_FIELD_NUMBER: _ClassVar[int]
+    RECOMMENDED_ADJUSTMENT_FIELD_NUMBER: _ClassVar[int]
+    ESTIMATED_OFFSET_MS_FIELD_NUMBER: _ClassVar[int]
+    server_timestamp_ms: int
+    recommended_adjustment: float
+    estimated_offset_ms: int
+    def __init__(self, server_timestamp_ms: _Optional[int] = ..., recommended_adjustment: _Optional[float] = ..., estimated_offset_ms: _Optional[int] = ...) -> None: ...
 
-class TrackChangeEvent(_message.Message):
-    __slots__ = ("current_track", "position_ms")
-    CURRENT_TRACK_FIELD_NUMBER: _ClassVar[int]
+class PlaybackCommand(_message.Message):
+    __slots__ = ("type", "server_timestamp_ms", "position_ms", "track", "playback_rate")
+    class CommandType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+        __slots__ = ()
+        PLAY: _ClassVar[PlaybackCommand.CommandType]
+        PAUSE: _ClassVar[PlaybackCommand.CommandType]
+        SEEK: _ClassVar[PlaybackCommand.CommandType]
+        TRACK_CHANGE: _ClassVar[PlaybackCommand.CommandType]
+        ADJUST_RATE: _ClassVar[PlaybackCommand.CommandType]
+    PLAY: PlaybackCommand.CommandType
+    PAUSE: PlaybackCommand.CommandType
+    SEEK: PlaybackCommand.CommandType
+    TRACK_CHANGE: PlaybackCommand.CommandType
+    ADJUST_RATE: PlaybackCommand.CommandType
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    SERVER_TIMESTAMP_MS_FIELD_NUMBER: _ClassVar[int]
     POSITION_MS_FIELD_NUMBER: _ClassVar[int]
-    current_track: _track_pb2.Track
+    TRACK_FIELD_NUMBER: _ClassVar[int]
+    PLAYBACK_RATE_FIELD_NUMBER: _ClassVar[int]
+    type: PlaybackCommand.CommandType
+    server_timestamp_ms: int
     position_ms: int
-    def __init__(self, current_track: _Optional[_Union[_track_pb2.Track, _Mapping]] = ..., position_ms: _Optional[int] = ...) -> None: ...
+    track: _track_pb2.Track
+    playback_rate: float
+    def __init__(self, type: _Optional[_Union[PlaybackCommand.CommandType, str]] = ..., server_timestamp_ms: _Optional[int] = ..., position_ms: _Optional[int] = ..., track: _Optional[_Union[_track_pb2.Track, _Mapping]] = ..., playback_rate: _Optional[float] = ...) -> None: ...
 
-class PlayStateEvent(_message.Message):
-    __slots__ = ("status", "position_ms")
+class ClientState(_message.Message):
+    __slots__ = ("client_timestamp_ms", "playback_position_ms", "current_track_id", "status", "current_playback_rate", "buffer_health_ms")
+    CLIENT_TIMESTAMP_MS_FIELD_NUMBER: _ClassVar[int]
+    PLAYBACK_POSITION_MS_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_TRACK_ID_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
-    POSITION_MS_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_PLAYBACK_RATE_FIELD_NUMBER: _ClassVar[int]
+    BUFFER_HEALTH_MS_FIELD_NUMBER: _ClassVar[int]
+    client_timestamp_ms: int
+    playback_position_ms: int
+    current_track_id: str
     status: _common_pb2.PlaybackStatus
-    position_ms: int
-    def __init__(self, status: _Optional[_Union[_common_pb2.PlaybackStatus, str]] = ..., position_ms: _Optional[int] = ...) -> None: ...
-
-class SeekEvent(_message.Message):
-    __slots__ = ("position_ms",)
-    POSITION_MS_FIELD_NUMBER: _ClassVar[int]
-    position_ms: int
-    def __init__(self, position_ms: _Optional[int] = ...) -> None: ...
-
-class SkipEvent(_message.Message):
-    __slots__ = ("new_track",)
-    NEW_TRACK_FIELD_NUMBER: _ClassVar[int]
-    new_track: _track_pb2.Track
-    def __init__(self, new_track: _Optional[_Union[_track_pb2.Track, _Mapping]] = ...) -> None: ...
-
-class MemberUpdate(_message.Message):
-    __slots__ = ("member_join", "member_leave", "role_change")
-    MEMBER_JOIN_FIELD_NUMBER: _ClassVar[int]
-    MEMBER_LEAVE_FIELD_NUMBER: _ClassVar[int]
-    ROLE_CHANGE_FIELD_NUMBER: _ClassVar[int]
-    member_join: MemberJoinEvent
-    member_leave: MemberLeaveEvent
-    role_change: MemberRoleChangeEvent
-    def __init__(self, member_join: _Optional[_Union[MemberJoinEvent, _Mapping]] = ..., member_leave: _Optional[_Union[MemberLeaveEvent, _Mapping]] = ..., role_change: _Optional[_Union[MemberRoleChangeEvent, _Mapping]] = ...) -> None: ...
-
-class MemberJoinEvent(_message.Message):
-    __slots__ = ("user", "role")
-    USER_FIELD_NUMBER: _ClassVar[int]
-    ROLE_FIELD_NUMBER: _ClassVar[int]
-    user: _user_pb2.User
-    role: _common_pb2.RoomMemberRole
-    def __init__(self, user: _Optional[_Union[_user_pb2.User, _Mapping]] = ..., role: _Optional[_Union[_common_pb2.RoomMemberRole, str]] = ...) -> None: ...
-
-class MemberLeaveEvent(_message.Message):
-    __slots__ = ("user_id",)
-    USER_ID_FIELD_NUMBER: _ClassVar[int]
-    user_id: str
-    def __init__(self, user_id: _Optional[str] = ...) -> None: ...
-
-class MemberRoleChangeEvent(_message.Message):
-    __slots__ = ("user_id", "new_role")
-    USER_ID_FIELD_NUMBER: _ClassVar[int]
-    NEW_ROLE_FIELD_NUMBER: _ClassVar[int]
-    user_id: str
-    new_role: _common_pb2.RoomMemberRole
-    def __init__(self, user_id: _Optional[str] = ..., new_role: _Optional[_Union[_common_pb2.RoomMemberRole, str]] = ...) -> None: ...
-
-class RoomSettingsUpdate(_message.Message):
-    __slots__ = ("name", "description", "visibility", "invite_only")
-    NAME_FIELD_NUMBER: _ClassVar[int]
-    DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
-    VISIBILITY_FIELD_NUMBER: _ClassVar[int]
-    INVITE_ONLY_FIELD_NUMBER: _ClassVar[int]
-    name: str
-    description: str
-    visibility: _common_pb2.RoomVisibility
-    invite_only: bool
-    def __init__(self, name: _Optional[str] = ..., description: _Optional[str] = ..., visibility: _Optional[_Union[_common_pb2.RoomVisibility, str]] = ..., invite_only: bool = ...) -> None: ...
-
-class RoomStatusUpdate(_message.Message):
-    __slots__ = ("status", "reason")
-    STATUS_FIELD_NUMBER: _ClassVar[int]
-    REASON_FIELD_NUMBER: _ClassVar[int]
-    status: _common_pb2.RoomStatus
-    reason: str
-    def __init__(self, status: _Optional[_Union[_common_pb2.RoomStatus, str]] = ..., reason: _Optional[str] = ...) -> None: ...
-
-class JoinRoomStreamRequest(_message.Message):
-    __slots__ = ("room_id", "user_id")
-    ROOM_ID_FIELD_NUMBER: _ClassVar[int]
-    USER_ID_FIELD_NUMBER: _ClassVar[int]
-    room_id: str
-    user_id: str
-    def __init__(self, room_id: _Optional[str] = ..., user_id: _Optional[str] = ...) -> None: ...
-
-class RoomStreamSnapshot(_message.Message):
-    __slots__ = ("room_info", "current_playback", "current_track", "members", "member_count")
-    ROOM_INFO_FIELD_NUMBER: _ClassVar[int]
-    CURRENT_PLAYBACK_FIELD_NUMBER: _ClassVar[int]
-    CURRENT_TRACK_FIELD_NUMBER: _ClassVar[int]
-    MEMBERS_FIELD_NUMBER: _ClassVar[int]
-    MEMBER_COUNT_FIELD_NUMBER: _ClassVar[int]
-    room_info: _room_pb2.Room
-    current_playback: _playback_pb2.PlaybackState
-    current_track: _track_pb2.Track
-    members: _containers.RepeatedCompositeFieldContainer[_user_pb2.User]
-    member_count: int
-    def __init__(self, room_info: _Optional[_Union[_room_pb2.Room, _Mapping]] = ..., current_playback: _Optional[_Union[_playback_pb2.PlaybackState, _Mapping]] = ..., current_track: _Optional[_Union[_track_pb2.Track, _Mapping]] = ..., members: _Optional[_Iterable[_Union[_user_pb2.User, _Mapping]]] = ..., member_count: _Optional[int] = ...) -> None: ...
-
-class StreamRoomUpdatesRequest(_message.Message):
-    __slots__ = ("room_id", "user_id")
-    ROOM_ID_FIELD_NUMBER: _ClassVar[int]
-    USER_ID_FIELD_NUMBER: _ClassVar[int]
-    room_id: str
-    user_id: str
-    def __init__(self, room_id: _Optional[str] = ..., user_id: _Optional[str] = ...) -> None: ...
+    current_playback_rate: float
+    buffer_health_ms: int
+    def __init__(self, client_timestamp_ms: _Optional[int] = ..., playback_position_ms: _Optional[int] = ..., current_track_id: _Optional[str] = ..., status: _Optional[_Union[_common_pb2.PlaybackStatus, str]] = ..., current_playback_rate: _Optional[float] = ..., buffer_health_ms: _Optional[int] = ...) -> None: ...

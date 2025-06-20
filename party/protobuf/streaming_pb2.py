@@ -22,51 +22,27 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from protobuf import common_pb2 as protobuf_dot_common__pb2
 from protobuf import track_pb2 as protobuf_dot_track__pb2
-from protobuf import user_pb2 as protobuf_dot_user__pb2
-from protobuf import room_pb2 as protobuf_dot_room__pb2
-from protobuf import playback_pb2 as protobuf_dot_playback__pb2
-from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
+from protobuf import common_pb2 as protobuf_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18protobuf/streaming.proto\x12\x0eListeningParty\x1a\x15protobuf/common.proto\x1a\x14protobuf/track.proto\x1a\x13protobuf/user.proto\x1a\x13protobuf/room.proto\x1a\x17protobuf/playback.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd7\x02\n\x10RoomStreamUpdate\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12-\n\ttimestamp\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x39\n\x0fplayback_update\x18\x03 \x01(\x0b\x32\x1e.ListeningParty.PlaybackUpdateH\x00\x12\x35\n\rmember_update\x18\x04 \x01(\x0b\x32\x1c.ListeningParty.MemberUpdateH\x00\x12\x42\n\x14room_settings_update\x18\x05 \x01(\x0b\x32\".ListeningParty.RoomSettingsUpdateH\x00\x12>\n\x12room_status_update\x18\x06 \x01(\x0b\x32 .ListeningParty.RoomStatusUpdateH\x00\x42\r\n\x0bupdate_type\"\xe8\x01\n\x0ePlaybackUpdate\x12\x38\n\x0ctrack_change\x18\x01 \x01(\x0b\x32 .ListeningParty.TrackChangeEventH\x00\x12\x34\n\nplay_state\x18\x02 \x01(\x0b\x32\x1e.ListeningParty.PlayStateEventH\x00\x12)\n\x04seek\x18\x03 \x01(\x0b\x32\x19.ListeningParty.SeekEventH\x00\x12)\n\x04skip\x18\x04 \x01(\x0b\x32\x19.ListeningParty.SkipEventH\x00\x42\x10\n\x0eplayback_event\"U\n\x10TrackChangeEvent\x12,\n\rcurrent_track\x18\x01 \x01(\x0b\x32\x15.ListeningParty.Track\x12\x13\n\x0bposition_ms\x18\x02 \x01(\x05\"U\n\x0ePlayStateEvent\x12.\n\x06status\x18\x01 \x01(\x0e\x32\x1e.ListeningParty.PlaybackStatus\x12\x13\n\x0bposition_ms\x18\x02 \x01(\x05\" \n\tSeekEvent\x12\x13\n\x0bposition_ms\x18\x01 \x01(\x05\"5\n\tSkipEvent\x12(\n\tnew_track\x18\x01 \x01(\x0b\x32\x15.ListeningParty.Track\"\xce\x01\n\x0cMemberUpdate\x12\x36\n\x0bmember_join\x18\x01 \x01(\x0b\x32\x1f.ListeningParty.MemberJoinEventH\x00\x12\x38\n\x0cmember_leave\x18\x02 \x01(\x0b\x32 .ListeningParty.MemberLeaveEventH\x00\x12<\n\x0brole_change\x18\x03 \x01(\x0b\x32%.ListeningParty.MemberRoleChangeEventH\x00\x42\x0e\n\x0cmember_event\"c\n\x0fMemberJoinEvent\x12\"\n\x04user\x18\x01 \x01(\x0b\x32\x14.ListeningParty.User\x12,\n\x04role\x18\x02 \x01(\x0e\x32\x1e.ListeningParty.RoomMemberRole\"#\n\x10MemberLeaveEvent\x12\x0f\n\x07user_id\x18\x01 \x01(\t\"Z\n\x15MemberRoleChangeEvent\x12\x0f\n\x07user_id\x18\x01 \x01(\t\x12\x30\n\x08new_role\x18\x02 \x01(\x0e\x32\x1e.ListeningParty.RoomMemberRole\"\xcc\x01\n\x12RoomSettingsUpdate\x12\x11\n\x04name\x18\x01 \x01(\tH\x00\x88\x01\x01\x12\x18\n\x0b\x64\x65scription\x18\x02 \x01(\tH\x01\x88\x01\x01\x12\x37\n\nvisibility\x18\x03 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibilityH\x02\x88\x01\x01\x12\x18\n\x0binvite_only\x18\x04 \x01(\x08H\x03\x88\x01\x01\x42\x07\n\x05_nameB\x0e\n\x0c_descriptionB\r\n\x0b_visibilityB\x0e\n\x0c_invite_only\"^\n\x10RoomStatusUpdate\x12*\n\x06status\x18\x01 \x01(\x0e\x32\x1a.ListeningParty.RoomStatus\x12\x13\n\x06reason\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\t\n\x07_reason\"9\n\x15JoinRoomStreamRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\"\xe1\x01\n\x12RoomStreamSnapshot\x12\'\n\troom_info\x18\x01 \x01(\x0b\x32\x14.ListeningParty.Room\x12\x37\n\x10\x63urrent_playback\x18\x02 \x01(\x0b\x32\x1d.ListeningParty.PlaybackState\x12,\n\rcurrent_track\x18\x03 \x01(\x0b\x32\x15.ListeningParty.Track\x12%\n\x07members\x18\x04 \x03(\x0b\x32\x14.ListeningParty.User\x12\x14\n\x0cmember_count\x18\x05 \x01(\x05\"<\n\x18StreamRoomUpdatesRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t2\xd3\x01\n\x11RoomStreamService\x12[\n\x0eJoinRoomStream\x12%.ListeningParty.JoinRoomStreamRequest\x1a\".ListeningParty.RoomStreamSnapshot\x12\x61\n\x11StreamRoomUpdates\x12(.ListeningParty.StreamRoomUpdatesRequest\x1a .ListeningParty.RoomStreamUpdate0\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18protobuf/streaming.proto\x12\x0eListeningParty\x1a\x14protobuf/track.proto\x1a\x15protobuf/common.proto\"\x8f\x01\n\x0fSyncMeasurement\x12\x1b\n\x13\x63lient_timestamp_ms\x18\x01 \x01(\x03\x12\x19\n\x11server_receive_ms\x18\x02 \x01(\x03\x12\x16\n\x0eserver_send_ms\x18\x03 \x01(\x03\x12\x19\n\x11\x63lient_receive_ms\x18\x04 \x01(\x03\x12\x11\n\tclient_id\x18\x05 \x01(\t\"h\n\x0cSyncResponse\x12\x1b\n\x13server_timestamp_ms\x18\x01 \x01(\x03\x12\x1e\n\x16recommended_adjustment\x18\x02 \x01(\x02\x12\x1b\n\x13\x65stimated_offset_ms\x18\x03 \x01(\x05\"\x8c\x02\n\x0fPlaybackCommand\x12\x39\n\x04type\x18\x01 \x01(\x0e\x32+.ListeningParty.PlaybackCommand.CommandType\x12\x1b\n\x13server_timestamp_ms\x18\x02 \x01(\x03\x12\x13\n\x0bposition_ms\x18\x03 \x01(\x03\x12$\n\x05track\x18\x04 \x01(\x0b\x32\x15.ListeningParty.Track\x12\x15\n\rplayback_rate\x18\x05 \x01(\x02\"O\n\x0b\x43ommandType\x12\x08\n\x04PLAY\x10\x00\x12\t\n\x05PAUSE\x10\x01\x12\x08\n\x04SEEK\x10\x02\x12\x10\n\x0cTRACK_CHANGE\x10\x03\x12\x0f\n\x0b\x41\x44JUST_RATE\x10\x04\"\xcb\x01\n\x0b\x43lientState\x12\x1b\n\x13\x63lient_timestamp_ms\x18\x01 \x01(\x03\x12\x1c\n\x14playback_position_ms\x18\x02 \x01(\x03\x12\x18\n\x10\x63urrent_track_id\x18\x03 \x01(\t\x12.\n\x06status\x18\x04 \x01(\x0e\x32\x1e.ListeningParty.PlaybackStatus\x12\x1d\n\x15\x63urrent_playback_rate\x18\x05 \x01(\x02\x12\x18\n\x10\x62uffer_health_ms\x18\x06 \x01(\x05\x32\xb4\x01\n\x0bSyncService\x12N\n\rMeasureTiming\x12\x1f.ListeningParty.SyncMeasurement\x1a\x1c.ListeningParty.SyncResponse\x12U\n\x11\x42idirectionalSync\x12\x1b.ListeningParty.ClientState\x1a\x1f.ListeningParty.PlaybackCommand(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protobuf.streaming_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_ROOMSTREAMUPDATE']._serialized_start=190
-  _globals['_ROOMSTREAMUPDATE']._serialized_end=533
-  _globals['_PLAYBACKUPDATE']._serialized_start=536
-  _globals['_PLAYBACKUPDATE']._serialized_end=768
-  _globals['_TRACKCHANGEEVENT']._serialized_start=770
-  _globals['_TRACKCHANGEEVENT']._serialized_end=855
-  _globals['_PLAYSTATEEVENT']._serialized_start=857
-  _globals['_PLAYSTATEEVENT']._serialized_end=942
-  _globals['_SEEKEVENT']._serialized_start=944
-  _globals['_SEEKEVENT']._serialized_end=976
-  _globals['_SKIPEVENT']._serialized_start=978
-  _globals['_SKIPEVENT']._serialized_end=1031
-  _globals['_MEMBERUPDATE']._serialized_start=1034
-  _globals['_MEMBERUPDATE']._serialized_end=1240
-  _globals['_MEMBERJOINEVENT']._serialized_start=1242
-  _globals['_MEMBERJOINEVENT']._serialized_end=1341
-  _globals['_MEMBERLEAVEEVENT']._serialized_start=1343
-  _globals['_MEMBERLEAVEEVENT']._serialized_end=1378
-  _globals['_MEMBERROLECHANGEEVENT']._serialized_start=1380
-  _globals['_MEMBERROLECHANGEEVENT']._serialized_end=1470
-  _globals['_ROOMSETTINGSUPDATE']._serialized_start=1473
-  _globals['_ROOMSETTINGSUPDATE']._serialized_end=1677
-  _globals['_ROOMSTATUSUPDATE']._serialized_start=1679
-  _globals['_ROOMSTATUSUPDATE']._serialized_end=1773
-  _globals['_JOINROOMSTREAMREQUEST']._serialized_start=1775
-  _globals['_JOINROOMSTREAMREQUEST']._serialized_end=1832
-  _globals['_ROOMSTREAMSNAPSHOT']._serialized_start=1835
-  _globals['_ROOMSTREAMSNAPSHOT']._serialized_end=2060
-  _globals['_STREAMROOMUPDATESREQUEST']._serialized_start=2062
-  _globals['_STREAMROOMUPDATESREQUEST']._serialized_end=2122
-  _globals['_ROOMSTREAMSERVICE']._serialized_start=2125
-  _globals['_ROOMSTREAMSERVICE']._serialized_end=2336
+  _globals['_SYNCMEASUREMENT']._serialized_start=90
+  _globals['_SYNCMEASUREMENT']._serialized_end=233
+  _globals['_SYNCRESPONSE']._serialized_start=235
+  _globals['_SYNCRESPONSE']._serialized_end=339
+  _globals['_PLAYBACKCOMMAND']._serialized_start=342
+  _globals['_PLAYBACKCOMMAND']._serialized_end=610
+  _globals['_PLAYBACKCOMMAND_COMMANDTYPE']._serialized_start=531
+  _globals['_PLAYBACKCOMMAND_COMMANDTYPE']._serialized_end=610
+  _globals['_CLIENTSTATE']._serialized_start=613
+  _globals['_CLIENTSTATE']._serialized_end=816
+  _globals['_SYNCSERVICE']._serialized_start=819
+  _globals['_SYNCSERVICE']._serialized_end=999
 # @@protoc_insertion_point(module_scope)

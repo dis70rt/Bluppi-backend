@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class RoomStreamServiceStub(object):
+class SyncServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -34,59 +34,59 @@ class RoomStreamServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.JoinRoomStream = channel.unary_unary(
-                '/ListeningParty.RoomStreamService/JoinRoomStream',
-                request_serializer=protobuf_dot_streaming__pb2.JoinRoomStreamRequest.SerializeToString,
-                response_deserializer=protobuf_dot_streaming__pb2.RoomStreamSnapshot.FromString,
+        self.MeasureTiming = channel.unary_unary(
+                '/ListeningParty.SyncService/MeasureTiming',
+                request_serializer=protobuf_dot_streaming__pb2.SyncMeasurement.SerializeToString,
+                response_deserializer=protobuf_dot_streaming__pb2.SyncResponse.FromString,
                 _registered_method=True)
-        self.StreamRoomUpdates = channel.unary_stream(
-                '/ListeningParty.RoomStreamService/StreamRoomUpdates',
-                request_serializer=protobuf_dot_streaming__pb2.StreamRoomUpdatesRequest.SerializeToString,
-                response_deserializer=protobuf_dot_streaming__pb2.RoomStreamUpdate.FromString,
+        self.BidirectionalSync = channel.stream_stream(
+                '/ListeningParty.SyncService/BidirectionalSync',
+                request_serializer=protobuf_dot_streaming__pb2.ClientState.SerializeToString,
+                response_deserializer=protobuf_dot_streaming__pb2.PlaybackCommand.FromString,
                 _registered_method=True)
 
 
-class RoomStreamServiceServicer(object):
+class SyncServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def JoinRoomStream(self, request, context):
+    def MeasureTiming(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StreamRoomUpdates(self, request, context):
+    def BidirectionalSync(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
 
-def add_RoomStreamServiceServicer_to_server(servicer, server):
+def add_SyncServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'JoinRoomStream': grpc.unary_unary_rpc_method_handler(
-                    servicer.JoinRoomStream,
-                    request_deserializer=protobuf_dot_streaming__pb2.JoinRoomStreamRequest.FromString,
-                    response_serializer=protobuf_dot_streaming__pb2.RoomStreamSnapshot.SerializeToString,
+            'MeasureTiming': grpc.unary_unary_rpc_method_handler(
+                    servicer.MeasureTiming,
+                    request_deserializer=protobuf_dot_streaming__pb2.SyncMeasurement.FromString,
+                    response_serializer=protobuf_dot_streaming__pb2.SyncResponse.SerializeToString,
             ),
-            'StreamRoomUpdates': grpc.unary_stream_rpc_method_handler(
-                    servicer.StreamRoomUpdates,
-                    request_deserializer=protobuf_dot_streaming__pb2.StreamRoomUpdatesRequest.FromString,
-                    response_serializer=protobuf_dot_streaming__pb2.RoomStreamUpdate.SerializeToString,
+            'BidirectionalSync': grpc.stream_stream_rpc_method_handler(
+                    servicer.BidirectionalSync,
+                    request_deserializer=protobuf_dot_streaming__pb2.ClientState.FromString,
+                    response_serializer=protobuf_dot_streaming__pb2.PlaybackCommand.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'ListeningParty.RoomStreamService', rpc_method_handlers)
+            'ListeningParty.SyncService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('ListeningParty.RoomStreamService', rpc_method_handlers)
+    server.add_registered_method_handlers('ListeningParty.SyncService', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
-class RoomStreamService(object):
+class SyncService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def JoinRoomStream(request,
+    def MeasureTiming(request,
             target,
             options=(),
             channel_credentials=None,
@@ -99,9 +99,9 @@ class RoomStreamService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/ListeningParty.RoomStreamService/JoinRoomStream',
-            protobuf_dot_streaming__pb2.JoinRoomStreamRequest.SerializeToString,
-            protobuf_dot_streaming__pb2.RoomStreamSnapshot.FromString,
+            '/ListeningParty.SyncService/MeasureTiming',
+            protobuf_dot_streaming__pb2.SyncMeasurement.SerializeToString,
+            protobuf_dot_streaming__pb2.SyncResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -113,7 +113,7 @@ class RoomStreamService(object):
             _registered_method=True)
 
     @staticmethod
-    def StreamRoomUpdates(request,
+    def BidirectionalSync(request_iterator,
             target,
             options=(),
             channel_credentials=None,
@@ -123,12 +123,12 @@ class RoomStreamService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
+        return grpc.experimental.stream_stream(
+            request_iterator,
             target,
-            '/ListeningParty.RoomStreamService/StreamRoomUpdates',
-            protobuf_dot_streaming__pb2.StreamRoomUpdatesRequest.SerializeToString,
-            protobuf_dot_streaming__pb2.RoomStreamUpdate.FromString,
+            '/ListeningParty.SyncService/BidirectionalSync',
+            protobuf_dot_streaming__pb2.ClientState.SerializeToString,
+            protobuf_dot_streaming__pb2.PlaybackCommand.FromString,
             options,
             channel_credentials,
             insecure,
