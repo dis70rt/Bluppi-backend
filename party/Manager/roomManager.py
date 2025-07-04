@@ -1,4 +1,4 @@
-from .synqit import SynqItDB
+from .bluppi import BluppiDB
 from .redisManager import RedisManager
 import uuid
 import time
@@ -12,7 +12,7 @@ class RoomManager():
         self.redis_manager = RedisManager()
 
     def create_room(self, name, host_user_id, description=None, visibility="PUBLIC", invite_only=False):
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             room_id = str(uuid.uuid4())
             room_code = self.generate_room_code()
             
@@ -72,7 +72,7 @@ class RoomManager():
                 logging.warning(f"Room {room_id} is not active")
                 return False
             
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute(
                     """
                     SELECT id FROM room_members 
@@ -113,7 +113,7 @@ class RoomManager():
             host_info = self.redis_manager.redis_client.hgetall(f'room:{room_id}:host')
             is_host = host_info.get('user_id') == user_id
             
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute(
                     """
                     UPDATE room_members
@@ -169,7 +169,7 @@ class RoomManager():
             event_type = None
             event_payload = {}
             
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 if track_id is not None:
                     db.cursor.execute(
                         """
@@ -230,7 +230,7 @@ class RoomManager():
     
     def get_room_info(self, room_id: str) -> dict:
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 query = f"""
                 SELECT r.id, r.name, r.description, r.room_code, r.host_user_id, 
                     r.visibility, r.invite_only, r.created_at, r.updated_at, r.status
@@ -295,7 +295,7 @@ class RoomManager():
 
     def list_active_rooms(self, visibility_filter=None, host_user_id_filter=None, include_private_rooms_if_member=False):
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 query = f"""
                 SELECT r.id, r.name, r.description, r.room_code, r.host_user_id, 
                     r.visibility, r.invite_only, r.created_at, r.updated_at, r.status
@@ -342,7 +342,7 @@ class RoomManager():
 
     def get_room_queue(self, room_id: str) -> list:
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute("SELECT * FROM get_room_queue(%s)", (room_id,))
                 queue = db.cursor.fetchall()
                 
@@ -367,7 +367,7 @@ class RoomManager():
     
     def add_to_queue(self, room_id: str, track_id: uuid.UUID, user_id: str) -> bool:
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute(
                     """
                     SELECT COALESCE(MAX(position), 0) + 1
@@ -406,7 +406,7 @@ class RoomManager():
     
     def remove_from_queue(self, room_id: str, position: int) -> bool:
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute(
                     """
                     DELETE FROM room_queue
@@ -448,7 +448,7 @@ class RoomManager():
         
     def get_room_id_by_code(self, room_code: str) -> str:
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute(
                     f"""
                     SELECT id FROM {self.table_name}
@@ -464,7 +464,7 @@ class RoomManager():
 
     def get_room_code(self, room_id: str) -> str:
         try:
-            with SynqItDB() as db:
+            with BluppiDB() as db:
                 db.cursor.execute(
                     f"""
                     SELECT room_code FROM {self.table_name}

@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SynqIt API",
+    title="Bluppi API",
     description="Searches iTunes, enriches with Last.fm, and returns sorted tracks.",
     version="1.0.0",
     lifespan=lifespan,
@@ -63,7 +63,7 @@ app.middleware("http")(ping_middleware)
 @app.get("/", tags=["Health"], include_in_schema=False)
 async def read_root():
     return {
-        "message": "Welcome to the SynqIt API!",
+        "message": "Welcome to the Bluppi API!",
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 

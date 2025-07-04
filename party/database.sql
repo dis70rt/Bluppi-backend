@@ -159,4 +159,4 @@ CREATE INDEX idx_rooms_active ON rooms(id, name) WHERE status = 'ACTIVE';
 CREATE INDEX idx_rooms_public_active ON rooms(visibility, status, created_at DESC) 
     WHERE visibility = 'PUBLIC' AND status = 'ACTIVE';
 
-ALTER DATABASE synqit_music REFRESH COLLATION VERSION;
+ALTER DATABASE bluppi_music REFRESH COLLATION VERSION;

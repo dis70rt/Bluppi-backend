@@ -9,7 +9,7 @@ from Service.roomStreamService import RoomStreamService
 from protobuf import room_pb2_grpc
 from protobuf import streaming_pb2_grpc
 
-class SynqItServer:
+class BluppiServer:
     def __init__(self, port=50051):
         self.port = port
         self.server = None
@@ -35,7 +35,7 @@ class SynqItServer:
         listen_addr = f'[::]:{self.port}'
         self.server.add_insecure_port(listen_addr)
         
-        logging.info(f"Starting SynqIt server on {listen_addr}")
+        logging.info(f"Starting Bluppi server on {listen_addr}")
         logging.info("Services available:")
         logging.info("  - RoomService (room management)")
         logging.info("  - RoomStreamService (real-time streaming)")
@@ -64,7 +64,7 @@ class SynqItServer:
         sys.exit(0)
 
 def serve():
-    server = SynqItServer()
+    server = BluppiServer()
     server.start()
 
 if __name__ == '__main__':

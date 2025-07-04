@@ -5,6 +5,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+VENV_DIR=".venv"
+
+source "$VENV_DIR/bin/activate"    
+
 generate_proto() {
     local FILE=$1
     echo -e "${YELLOW}Generating Python code for $FILE...${NC}"

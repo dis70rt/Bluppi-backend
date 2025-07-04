@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 import psycopg2
 from pydantic import BaseModel
 import uuid
-from app.utils.synqit_db import SynqItDB
+from app.utils.bluppi_db import BluppiDB
 
 class Track(BaseModel):
     id: uuid.UUID
@@ -22,7 +22,7 @@ class Track(BaseModel):
 class TrackDB:
     @staticmethod
     def write(track: Track) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = """
                     INSERT INTO tracks (
@@ -64,7 +64,7 @@ class TrackDB:
 
     @staticmethod
     def read(track_id: uuid.UUID) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "SELECT * FROM tracks WHERE id = %s"
                 db.cursor.execute(query, (track_id,))
@@ -103,7 +103,7 @@ class TrackDB:
 
     @staticmethod
     def search(query: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 search_term = f"%{query}%"
                 db.cursor.execute(
@@ -163,7 +163,7 @@ class TrackDB:
 
     @staticmethod
     def add_track_history(user_id: str, track_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
@@ -230,7 +230,7 @@ class TrackDB:
     def get_track_history(
         user_id: str, limit: int = 20, offset: int = 0
     ) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
 
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
@@ -287,7 +287,7 @@ class TrackDB:
 
     @staticmethod
     def like_track(user_id: str, track_id: uuid.UUID) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
 
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
@@ -339,7 +339,7 @@ class TrackDB:
 
     @staticmethod
     def unlike_track(user_id: str, track_id: uuid.UUID) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
 
                 db.cursor.execute(
@@ -382,7 +382,7 @@ class TrackDB:
     def get_liked_tracks(
         user_id: str, limit: int = 20, offset: int = 0
     ) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
 
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
@@ -443,7 +443,7 @@ class TrackDB:
 
     @staticmethod
     def get_popular_tracks(limit: int = 20) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute(
                     """
@@ -492,7 +492,7 @@ class TrackDB:
     def get_tracks_by_genre(
         genre: str, limit: int = 20, offset: int = 0
     ) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute(
                     """
@@ -550,7 +550,7 @@ class TrackDB:
             
     @staticmethod
     def clear_track_history(user_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():

@@ -1,1 +1,1 @@
-# SynqIt-Backend
+# Bluppi-Backend

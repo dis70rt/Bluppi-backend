@@ -1,4 +1,4 @@
--- cqlsh 127.0.0.1 9042 -f /home/ethernode/Projects/SynqIt/synqit-py/chat/schema.cql
+-- cqlsh 127.0.0.1 9042 -f /home/ethernode/Projects/Bluppi/synqit-py/chat/schema.cql
 
 CREATE KEYSPACE IF NOT EXISTS chat_app
 WITH replication = {

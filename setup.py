@@ -8,7 +8,6 @@ from rich.prompt import Confirm
 console = Console()
 
 def check_dependencies():
-    """Check if required dependencies are installed"""
     required = ["uvicorn", "cloudflared"]
     missing = []
     
@@ -21,17 +20,14 @@ def check_dependencies():
     return missing
 
 def setup():
-    """Setup SynqIt environment"""
-    console.print(Panel.fit("[bold blue]SynqIt Setup Assistant[/bold blue]", subtitle="Setting up environment..."))
+    console.print(Panel.fit("[bold blue]Bluppi Setup Assistant[/bold blue]", subtitle="Setting up environment..."))
     
-    # Check dependencies
     missing_deps = check_dependencies()
     if missing_deps:
         console.print(f"[red]Missing dependencies: {', '.join(missing_deps)}[/red]")
         console.print("[yellow]Please install missing dependencies before continuing.[/yellow]")
         sys.exit(1)
     
-    # Check if services are running
     services = ["redis-server", "postgresql"]
     for service in services:
         try:

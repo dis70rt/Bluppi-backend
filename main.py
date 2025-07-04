@@ -24,22 +24,21 @@ except ImportError:
 console = Console()
 
 class Server:
-    def __init__(self, name, module, port, domain):
+    def __init__(self, name, module, port, domain, path_prefix=""):
         self.name = name
         self.module = module
         self.port = port
         self.domain = domain
+        self.path_prefix = path_prefix
         self.process = None
         self.start_time = None
         self.pid_file = f".{name.lower().replace(' ', '_')}_pid"
     
     def start(self):
-        
         python_path = sys.executable
-        cmd = [python_path, "-m", "uvicorn", self.module, "--port", str(self.port), "--log-level", "error"]
+        cmd = [python_path, "-m", "uvicorn", self.module, "--port", str(self.port), "--log-level", "error", "--host", "127.0.0.1"]
         self.process = subprocess.Popen(cmd)
         self.start_time = datetime.now()
-        
         
         with open(self.pid_file, 'w') as f:
             f.write(str(self.process.pid))
@@ -94,8 +93,8 @@ class Server:
 def request_sudo_permission():
     if os.geteuid() != 0:
         console.print(Panel.fit(
-            "[yellow]⚠️ SynqIt requires sudo privileges to manage system services[/yellow]\n\n"
-            "[white]This is needed to start Redis and PostgreSQL services.[/white]",
+            "[yellow]⚠️ Bluppi requires sudo privileges to manage system services[/yellow]\n\n"
+            "[white]This is needed to start Redis, PostgreSQL, and Nginx services.[/white]",
             title="[bold blue]Sudo Required[/bold blue]", 
             border_style="blue"
         ))
@@ -124,20 +123,19 @@ def start_cloudflare():
     
     env = os.environ.copy()
     if 'SUDO_USER' in env:
-        
         original_user = env['SUDO_USER']
         original_home = f"/home/{original_user}"
         env['HOME'] = original_home
         env['USER'] = original_user
     
-    return subprocess.Popen(["cloudflared", "tunnel", "run", "main"], env=env)
+    return subprocess.Popen(["cloudflared", "tunnel", "run", "bluppi"], env=env)
 
 def get_server_table(servers, cf_pid=None):
     table = Table(show_header=True, header_style="bold magenta")
     table.add_column("Service")
     table.add_column("Status")
     table.add_column("Port")
-    table.add_column("Domain")
+    table.add_column("Domain/Path")
     table.add_column("PID")
     table.add_column("Uptime")
     table.add_column("Req/sec")
@@ -146,12 +144,13 @@ def get_server_table(servers, cf_pid=None):
         is_running = server.check_status()
         status = "[green]Running[/green]" if is_running else "[red]Stopped[/red]"
         pid = str(server.process.pid) if server.process else "N/A"
+        domain_path = f"{server.domain}{server.path_prefix}" if server.path_prefix else server.domain
         
         table.add_row(
             server.name,
             status,
             str(server.port),
-            server.domain,
+            domain_path,
             pid,
             server.uptime if is_running else "N/A",
             server.requests_per_second if is_running else "N/A"
@@ -159,7 +158,7 @@ def get_server_table(servers, cf_pid=None):
     
     if cf_pid:
         table.add_row(
-            "Cloudflare",
+            "Cloudflare Tunnel",
             "[green]Running[/green]",
             "N/A",
             "*.saikat.in",
@@ -171,7 +170,7 @@ def get_server_table(servers, cf_pid=None):
     return table
 
 def main():
-    parser = argparse.ArgumentParser(description="Start SynqIt services")
+    parser = argparse.ArgumentParser(description="Start Bluppi services")
     parser.add_argument("--setup", action="store_true", help="Run setup before starting")
     parser.add_argument("--no-cloudflare", action="store_true", help="Don't start Cloudflare tunnel")
     parser.add_argument("--status", action="store_true", help="Show status without starting servers")
@@ -181,8 +180,10 @@ def main():
         setup()
     
     servers = [
-        Server("API Server", "app.server:app", 8000, "synqit.saikat.in"),
-        Server("Chat Server", "chat.server:app", 8080, "socket.saikat.in")
+        Server("Bluppi API", "app.server:app", 8000, "bluppi-api.saikat.in"),
+        Server("Bluppi WS1", "chat.server:app", 8080, "bluppi-ws1.saikat.in"),
+        Server("Bluppi WS2", "chat.server:app", 8081, "bluppi-ws2.saikat.in"),
+        Server("Bluppi gRPC", "party.server", 50051, "bluppi-grpc.saikat.in"),
     ]
     
     if args.status:
@@ -190,7 +191,7 @@ def main():
         console.print(get_server_table(servers, cf_pid))
         return
     
-    console.print(Panel.fit("[bold blue]SynqIt Server Manager[/bold blue]", 
+    console.print(Panel.fit("[bold blue]Bluppi Server Manager[/bold blue]", 
                           subtitle="Starting services..."))
     
     request_sudo_permission() 
@@ -211,14 +212,21 @@ def main():
         for server in servers:
             console.print(f"[bold green]Starting {server.name} on port {server.port}...[/bold green]")
             server.start()
-            
+            time.sleep(1)
+        
         cf_pid = None
         if not args.no_cloudflare:
             cf_process = start_cloudflare()
             cf_pid = cf_process.pid
         
         console.print(get_server_table(servers, cf_pid))  
-        console.print(Panel("[yellow]Press Ctrl+C to stop servers. Use 'watch -n1 python main.py --status' to monitor.[/yellow]"))
+        console.print(Panel(
+            "[yellow]Press Ctrl+C to stop servers. Use 'watch -n1 python main.py --status' to monitor.[/yellow]\n"
+            "[cyan]API: https://bluppi-api.saikat.in/[/cyan]\n"
+            "[cyan]WS1: wss://bluppi-ws1.saikat.in/[/cyan]\n"
+            "[cyan]WS2: wss://bluppi-ws2.saikat.in/[/cyan]\n"
+            "[cyan]gRPC: https://bluppi-grpc.saikat.in/[/cyan]"
+        ))
         
         for server in servers:
             if server.process:
@@ -226,6 +234,7 @@ def main():
         
     except KeyboardInterrupt:
         console.print("\n[bold red]Shutting down servers...[/bold red]")
+        
         for server in servers:
             server.stop()
         

@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "in.ethernode.synqit",
+      "package_name": "in.ethernode.bluppi",
       "sha256_cert_fingerprints": [
         "09:AA:0D:4E:6F:60:5F:C9:9C:2D:48:FA:92:EA:A7:F6:52:C2:63:44:49:35:BE:27:2B:E1:DB:F9:A8:B9:AD:9C"
       ]

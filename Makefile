@@ -4,7 +4,7 @@ SOCKET_PORT = 8080
 PORT = 8000
 VENV = .venv
 
-PYTHON = $(VENV)/bin/python
+PYTHON = $(VENV)/bin/python3
 UVICORN = $(VENV)/bin/uvicorn
 PIP = $(VENV)/bin/pip
 
@@ -32,7 +32,6 @@ up: start-services
 prod:
 	@echo "Starting production servers with main.py..."
 	$(PYTHON) main.py
-	
 
 up-detached: start-services
 	nohup $(UVICORN) $(APP_NAME) --port $(PORT) --reload > app.log 2>&1 &

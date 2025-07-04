@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 psycopg2.extras.register_uuid()
 
-class SynqItDB:
+class BluppiDB:
     def __init__(self):
         self.connection = None
         self.cursor = None

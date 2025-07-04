@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 import psycopg2
 import uuid 
-from app.utils.synqit_db import SynqItDB
+from app.utils.bluppi_db import BluppiDB
 
 
 class UserBase(BaseModel):
@@ -51,7 +51,7 @@ class UserResponse(BaseModel):
 class UserDB:
     @staticmethod
     def test_connection():
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT 1")
                 return {
@@ -68,7 +68,7 @@ class UserDB:
 
     @staticmethod
     def create(user: UserCreate) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = """
                     INSERT INTO users (id, username, email, name, bio, country, phone, profile_pic, favorite_genres)
@@ -123,7 +123,7 @@ class UserDB:
 
     @staticmethod
     def get_by_id(user_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "SELECT * FROM users WHERE id = %s"
                 db.cursor.execute(query, (user_id,))
@@ -162,7 +162,7 @@ class UserDB:
 
     @staticmethod
     def get_by_username(username: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "SELECT * FROM users WHERE username = %s"
                 db.cursor.execute(query, (username,))
@@ -201,7 +201,7 @@ class UserDB:
 
     @staticmethod
     def update(user_id: str, user_update: UserUpdate) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 update_fields = []
                 values = []
@@ -265,7 +265,7 @@ class UserDB:
 
     @staticmethod
     def delete(user_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "DELETE FROM users WHERE id = %s"
                 db.cursor.execute(query, (user_id,))
@@ -293,7 +293,7 @@ class UserDB:
 
     @staticmethod
     def search(query: str, limit: int = 10, offset: int = 0) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 search_term = f"%{query}%"
                 db.cursor.execute(
@@ -343,7 +343,7 @@ class UserDB:
 
     @staticmethod
     def username_exists(username: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "SELECT EXISTS(SELECT 1 FROM users WHERE username = %s)"
                 db.cursor.execute(query, (username,))
@@ -362,7 +362,7 @@ class UserDB:
 
     @staticmethod
     def email_exists(email: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "SELECT EXISTS(SELECT 1 FROM users WHERE email = %s)"
                 db.cursor.execute(query, (email,))
@@ -381,7 +381,7 @@ class UserDB:
 
     @staticmethod
     def follow_user(follower_id: str, followee_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 if follower_id == followee_id:
                     return {
@@ -428,7 +428,7 @@ class UserDB:
 
     @staticmethod
     def unfollow_user(follower_id: str, followee_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = "DELETE FROM follows WHERE follower_id = %s AND followee_id = %s"
                 db.cursor.execute(query, (follower_id, followee_id))
@@ -456,7 +456,7 @@ class UserDB:
 
     @staticmethod
     def get_followers(user_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute(
                     """
@@ -501,7 +501,7 @@ class UserDB:
 
     @staticmethod
     def get_following(user_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute(
                     """
@@ -546,7 +546,7 @@ class UserDB:
     
     @staticmethod
     def is_following(follower_id: str, followee_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 query = """
                     SELECT EXISTS(
@@ -571,7 +571,7 @@ class UserDB:
 
     @staticmethod
     def like_track(user_id: str, track_id: uuid.UUID) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
@@ -622,7 +622,7 @@ class UserDB:
 
     @staticmethod
     def unlike_track(user_id: str, track_id: uuid.UUID) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute(
                     """
@@ -662,7 +662,7 @@ class UserDB:
 
     @staticmethod
     def get_liked_tracks(user_id: str, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
@@ -720,7 +720,7 @@ class UserDB:
 
     @staticmethod
     def get_user_stats(user_id: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
@@ -762,7 +762,7 @@ class UserDB:
 
     @staticmethod
     def add_recent_search(user_id: str, query: str) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
@@ -796,7 +796,7 @@ class UserDB:
 
     @staticmethod
     def get_recent_searches(user_id: str, limit: int = 10) -> Dict[str, Any]:
-        with SynqItDB() as db:
+        with BluppiDB() as db:
             try:
                 db.cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
                 if not db.cursor.fetchone():
