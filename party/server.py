@@ -5,9 +5,12 @@ import logging
 from concurrent import futures
 
 from Service.roomService import RoomService
-from Service.roomStreamService import RoomStreamService
+from Service.syncService import SyncService
+from Service.userService import UserService
+
 from protobuf import room_pb2_grpc
 from protobuf import streaming_pb2_grpc
+from protobuf import user_pb2_grpc
 
 class BluppiServer:
     def __init__(self, port=50051):
@@ -28,9 +31,10 @@ class BluppiServer:
                 ('grpc.max_receive_message_length', 4 * 1024 * 1024),
             ]
         )
-        
+                
         room_pb2_grpc.add_RoomServiceServicer_to_server(RoomService(), self.server)
-        streaming_pb2_grpc.add_RoomStreamServiceServicer_to_server(RoomStreamService(), self.server)
+        streaming_pb2_grpc.add_SyncServiceServicer_to_server(SyncService(), self.server)
+        # user_pb2_grpc.add_UserServiceServicer_to_server(UserService(user), self.server)
         
         listen_addr = f'[::]:{self.port}'
         self.server.add_insecure_port(listen_addr)
@@ -39,6 +43,8 @@ class BluppiServer:
         logging.info("Services available:")
         logging.info("  - RoomService (room management)")
         logging.info("  - RoomStreamService (real-time streaming)")
+        logging.info("  - PlaybackSyncService (playback synchronization)")
+        logging.info("  - UserService (user profiles)")
         
         self.server.start()
         

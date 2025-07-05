@@ -29,7 +29,6 @@ class RoomService(room_pb2_grpc.RoomServiceServicer):
                 host_user_id=request.host_user_id,
                 description=request.description,
                 visibility=visibility, 
-                invite_only=request.invite_only
             )
             
             room_code = self.room_manager.get_room_code(room_id)
@@ -41,7 +40,7 @@ class RoomService(room_pb2_grpc.RoomServiceServicer):
                 room_code=room_code,
                 host_user_id=request.host_user_id,
                 visibility=request.visibility,
-                invite_only=request.invite_only,
+                invite_only=False,
                 status=common_pb2.ACTIVE
             )
 

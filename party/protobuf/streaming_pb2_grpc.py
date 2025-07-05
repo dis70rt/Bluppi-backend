@@ -39,6 +39,11 @@ class SyncServiceStub(object):
                 request_serializer=protobuf_dot_streaming__pb2.SyncMeasurement.SerializeToString,
                 response_deserializer=protobuf_dot_streaming__pb2.SyncResponse.FromString,
                 _registered_method=True)
+        self.Sync = channel.unary_unary(
+                '/ListeningParty.SyncService/Sync',
+                request_serializer=protobuf_dot_streaming__pb2.SyncRequest.SerializeToString,
+                response_deserializer=protobuf_dot_streaming__pb2.SyncReply.FromString,
+                _registered_method=True)
         self.BidirectionalSync = channel.stream_stream(
                 '/ListeningParty.SyncService/BidirectionalSync',
                 request_serializer=protobuf_dot_streaming__pb2.ClientState.SerializeToString,
@@ -50,6 +55,12 @@ class SyncServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def MeasureTiming(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Sync(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -68,6 +79,11 @@ def add_SyncServiceServicer_to_server(servicer, server):
                     servicer.MeasureTiming,
                     request_deserializer=protobuf_dot_streaming__pb2.SyncMeasurement.FromString,
                     response_serializer=protobuf_dot_streaming__pb2.SyncResponse.SerializeToString,
+            ),
+            'Sync': grpc.unary_unary_rpc_method_handler(
+                    servicer.Sync,
+                    request_deserializer=protobuf_dot_streaming__pb2.SyncRequest.FromString,
+                    response_serializer=protobuf_dot_streaming__pb2.SyncReply.SerializeToString,
             ),
             'BidirectionalSync': grpc.stream_stream_rpc_method_handler(
                     servicer.BidirectionalSync,
@@ -102,6 +118,33 @@ class SyncService(object):
             '/ListeningParty.SyncService/MeasureTiming',
             protobuf_dot_streaming__pb2.SyncMeasurement.SerializeToString,
             protobuf_dot_streaming__pb2.SyncResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Sync(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/ListeningParty.SyncService/Sync',
+            protobuf_dot_streaming__pb2.SyncRequest.SerializeToString,
+            protobuf_dot_streaming__pb2.SyncReply.FromString,
             options,
             channel_credentials,
             insecure,

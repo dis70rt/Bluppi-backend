@@ -108,3 +108,7 @@ class RedisManager:
             'changes': updates,
             'timestamp': time.time()
         })
+
+    def client_offsets(self, client_id, offset):
+        key = f"offsets:{client_id}"
+        return self.redis_client.rpush(key,offset)

@@ -182,8 +182,8 @@ def main():
     servers = [
         Server("Bluppi API", "app.server:app", 8000, "bluppi-api.saikat.in"),
         Server("Bluppi WS1", "chat.server:app", 8080, "bluppi-ws1.saikat.in"),
-        Server("Bluppi WS2", "chat.server:app", 8081, "bluppi-ws2.saikat.in"),
-        Server("Bluppi gRPC", "party.server", 50051, "bluppi-grpc.saikat.in"),
+        # Server("Bluppi WS2", "chat.server:app", 8081, "bluppi-ws2.saikat.in"),
+        # Server("Bluppi gRPC", "party.server", 50051, "bluppi-grpc.saikat.in"),
     ]
     
     if args.status:
@@ -215,9 +215,9 @@ def main():
             time.sleep(1)
         
         cf_pid = None
-        if not args.no_cloudflare:
-            cf_process = start_cloudflare()
-            cf_pid = cf_process.pid
+        # if not args.no_cloudflare:
+        #     cf_process = start_cloudflare()
+        #     cf_pid = cf_process.pid
         
         console.print(get_server_table(servers, cf_pid))  
         console.print(Panel(

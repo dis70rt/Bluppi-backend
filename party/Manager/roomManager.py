@@ -11,7 +11,7 @@ class RoomManager():
         self.table_name = "rooms"
         self.redis_manager = RedisManager()
 
-    def create_room(self, name, host_user_id, description=None, visibility="PUBLIC", invite_only=False):
+    def create_room(self, name, host_user_id, description=None, visibility="PUBLIC"):
         with BluppiDB() as db:
             room_id = str(uuid.uuid4())
             room_code = self.generate_room_code()
@@ -19,11 +19,11 @@ class RoomManager():
             try:
                 db.cursor.execute(
                     f"""
-                    INSERT INTO {self.table_name} (id, name, host_user_id, room_code, description, visibility, invite_only)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO {self.table_name} (id, name, host_user_id, room_code, description, visibility)
+                    VALUES (%s, %s, %s, %s, %s, %s)
                     RETURNING id
                     """,
-                    (room_id, name, host_user_id, room_code, description, visibility, invite_only)
+                    (room_id, name, host_user_id, room_code, description, visibility)
                 )
                 room_id = db.cursor.fetchone()[0]
                 
@@ -233,7 +233,7 @@ class RoomManager():
             with BluppiDB() as db:
                 query = f"""
                 SELECT r.id, r.name, r.description, r.room_code, r.host_user_id, 
-                    r.visibility, r.invite_only, r.created_at, r.updated_at, r.status
+                    r.visibility, r.created_at, r.updated_at, r.status
                 FROM {self.table_name} r
                 WHERE r.id = %s
                 """
@@ -251,9 +251,8 @@ class RoomManager():
                     'host_user_id': room[4],
                     'visibility': room[5],
                     'status': room[9],
-                    'invite_only': bool(room[6]),
-                    'created_at': room[7],
-                    'updated_at': room[8]
+                    'created_at': room[6],
+                    'updated_at': room[7]
                 }
                 
                 db.cursor.execute("SELECT * FROM get_active_room_members(%s)", (room_id,))
@@ -298,7 +297,7 @@ class RoomManager():
             with BluppiDB() as db:
                 query = f"""
                 SELECT r.id, r.name, r.description, r.room_code, r.host_user_id, 
-                    r.visibility, r.invite_only, r.created_at, r.updated_at, r.status
+                    r.visibility, r.created_at, r.updated_at, r.status
                 FROM {self.table_name} r
                 WHERE r.status = 'ACTIVE'
                 """
@@ -327,10 +326,9 @@ class RoomManager():
                         'room_code': room[3],
                         'host_user_id': room[4],
                         'visibility': room[5],
-                        'invite_only': bool(room[6]),
-                        'created_at': room[7],
-                        'updated_at': room[8],
-                        'status': room[9]
+                        'created_at': room[6],
+                        'updated_at': room[7],
+                        'status': room[8]
                     }
                     result.append(room_dict)
                     

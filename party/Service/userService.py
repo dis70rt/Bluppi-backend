@@ -1,3 +1,4 @@
+import grpc
 from protobuf import user_pb2
 from protobuf import user_pb2_grpc
 

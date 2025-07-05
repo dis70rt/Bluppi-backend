@@ -9,18 +9,18 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class SyncMeasurement(_message.Message):
-    __slots__ = ("client_timestamp_ms", "server_receive_ms", "server_send_ms", "client_receive_ms", "client_id")
-    CLIENT_TIMESTAMP_MS_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("client_send_ms", "server_receive_ms", "server_send_ms", "client_receive_ms", "client_id")
+    CLIENT_SEND_MS_FIELD_NUMBER: _ClassVar[int]
     SERVER_RECEIVE_MS_FIELD_NUMBER: _ClassVar[int]
     SERVER_SEND_MS_FIELD_NUMBER: _ClassVar[int]
     CLIENT_RECEIVE_MS_FIELD_NUMBER: _ClassVar[int]
     CLIENT_ID_FIELD_NUMBER: _ClassVar[int]
-    client_timestamp_ms: int
+    client_send_ms: int
     server_receive_ms: int
     server_send_ms: int
     client_receive_ms: int
     client_id: str
-    def __init__(self, client_timestamp_ms: _Optional[int] = ..., server_receive_ms: _Optional[int] = ..., server_send_ms: _Optional[int] = ..., client_receive_ms: _Optional[int] = ..., client_id: _Optional[str] = ...) -> None: ...
+    def __init__(self, client_send_ms: _Optional[int] = ..., server_receive_ms: _Optional[int] = ..., server_send_ms: _Optional[int] = ..., client_receive_ms: _Optional[int] = ..., client_id: _Optional[str] = ...) -> None: ...
 
 class SyncResponse(_message.Message):
     __slots__ = ("server_timestamp_ms", "recommended_adjustment", "estimated_offset_ms")
@@ -31,6 +31,20 @@ class SyncResponse(_message.Message):
     recommended_adjustment: float
     estimated_offset_ms: int
     def __init__(self, server_timestamp_ms: _Optional[int] = ..., recommended_adjustment: _Optional[float] = ..., estimated_offset_ms: _Optional[int] = ...) -> None: ...
+
+class SyncRequest(_message.Message):
+    __slots__ = ("client_send_ms",)
+    CLIENT_SEND_MS_FIELD_NUMBER: _ClassVar[int]
+    client_send_ms: int
+    def __init__(self, client_send_ms: _Optional[int] = ...) -> None: ...
+
+class SyncReply(_message.Message):
+    __slots__ = ("server_receive_ms", "server_send_ms")
+    SERVER_RECEIVE_MS_FIELD_NUMBER: _ClassVar[int]
+    SERVER_SEND_MS_FIELD_NUMBER: _ClassVar[int]
+    server_receive_ms: int
+    server_send_ms: int
+    def __init__(self, server_receive_ms: _Optional[int] = ..., server_send_ms: _Optional[int] = ...) -> None: ...
 
 class PlaybackCommand(_message.Message):
     __slots__ = ("type", "server_timestamp_ms", "position_ms", "track", "playback_rate")
