@@ -16,4 +16,4 @@ status:
 	sudo systemctl status postgresql
 
 logs:
-	multitail -cS dockerhttp -s 2 -l "docker logs -f bluppi-py-api-1" -l "docker logs -f bluppi-py-api-1"
+	multitail -cS dockerhttp -s 2 -l "docker logs -f bluppi-api" -l "docker logs -f bluppi-ws1"
