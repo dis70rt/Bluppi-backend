@@ -12,7 +12,7 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Room(_message.Message):
-    __slots__ = ("id", "name", "description", "room_code", "status", "visibility", "invite_only", "members", "host_user_id", "playback_state", "current_track")
+    __slots__ = ("id", "name", "description", "room_code", "status", "visibility", "invite_only", "members", "host_user_id", "playback_state", "current_track", "current_position_ms", "last_position_update", "track_start_time", "is_playing")
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     DESCRIPTION_FIELD_NUMBER: _ClassVar[int]
@@ -24,6 +24,10 @@ class Room(_message.Message):
     HOST_USER_ID_FIELD_NUMBER: _ClassVar[int]
     PLAYBACK_STATE_FIELD_NUMBER: _ClassVar[int]
     CURRENT_TRACK_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_POSITION_MS_FIELD_NUMBER: _ClassVar[int]
+    LAST_POSITION_UPDATE_FIELD_NUMBER: _ClassVar[int]
+    TRACK_START_TIME_FIELD_NUMBER: _ClassVar[int]
+    IS_PLAYING_FIELD_NUMBER: _ClassVar[int]
     id: str
     name: str
     description: str
@@ -35,7 +39,11 @@ class Room(_message.Message):
     host_user_id: str
     playback_state: _playback_pb2.PlaybackState
     current_track: _track_pb2.Track
-    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., room_code: _Optional[str] = ..., status: _Optional[_Union[_common_pb2.RoomStatus, str]] = ..., visibility: _Optional[_Union[_common_pb2.RoomVisibility, str]] = ..., invite_only: bool = ..., members: _Optional[_Iterable[_Union[RoomMember, _Mapping]]] = ..., host_user_id: _Optional[str] = ..., playback_state: _Optional[_Union[_playback_pb2.PlaybackState, _Mapping]] = ..., current_track: _Optional[_Union[_track_pb2.Track, _Mapping]] = ...) -> None: ...
+    current_position_ms: int
+    last_position_update: int
+    track_start_time: int
+    is_playing: bool
+    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., description: _Optional[str] = ..., room_code: _Optional[str] = ..., status: _Optional[_Union[_common_pb2.RoomStatus, str]] = ..., visibility: _Optional[_Union[_common_pb2.RoomVisibility, str]] = ..., invite_only: bool = ..., members: _Optional[_Iterable[_Union[RoomMember, _Mapping]]] = ..., host_user_id: _Optional[str] = ..., playback_state: _Optional[_Union[_playback_pb2.PlaybackState, _Mapping]] = ..., current_track: _Optional[_Union[_track_pb2.Track, _Mapping]] = ..., current_position_ms: _Optional[int] = ..., last_position_update: _Optional[int] = ..., track_start_time: _Optional[int] = ..., is_playing: bool = ...) -> None: ...
 
 class CreateRoomRequest(_message.Message):
     __slots__ = ("name", "description", "room_code", "visibility", "invite_only", "host_user_id")

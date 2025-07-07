@@ -10,6 +10,12 @@ import datetime
 import os
 
 import redis.asyncio as aioredis
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_db   = int(os.getenv("REDIS_DB",   0))
 
 from .endpoints.middleware import ping_middleware
 from .endpoints.routes import following, history, tracks, audio, users
@@ -37,7 +43,7 @@ async def lifespan(app: FastAPI):
     client = httpx.AsyncClient(timeout=10.0)
 
     redis_client = aioredis.Redis(
-        host="localhost", port=6379, db=0,
+        host=redis_host, port=redis_port, db=redis_db,
         encoding="utf-8", decode_responses=True
     )
 

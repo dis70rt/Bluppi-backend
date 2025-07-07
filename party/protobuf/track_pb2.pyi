@@ -7,18 +7,20 @@ from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Track(_message.Message):
-    __slots__ = ("track_id", "title", "artist", "image_url", "duration_ms")
+    __slots__ = ("track_id", "title", "artist", "image_url", "duration_ms", "audio_url")
     TRACK_ID_FIELD_NUMBER: _ClassVar[int]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     ARTIST_FIELD_NUMBER: _ClassVar[int]
     IMAGE_URL_FIELD_NUMBER: _ClassVar[int]
     DURATION_MS_FIELD_NUMBER: _ClassVar[int]
+    AUDIO_URL_FIELD_NUMBER: _ClassVar[int]
     track_id: str
     title: str
     artist: str
     image_url: str
     duration_ms: int
-    def __init__(self, track_id: _Optional[str] = ..., title: _Optional[str] = ..., artist: _Optional[str] = ..., image_url: _Optional[str] = ..., duration_ms: _Optional[int] = ...) -> None: ...
+    audio_url: str
+    def __init__(self, track_id: _Optional[str] = ..., title: _Optional[str] = ..., artist: _Optional[str] = ..., image_url: _Optional[str] = ..., duration_ms: _Optional[int] = ..., audio_url: _Optional[str] = ...) -> None: ...
 
 class GetTrackRequest(_message.Message):
     __slots__ = ("track_id",)

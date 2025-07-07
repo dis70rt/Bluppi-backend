@@ -1,9 +1,8 @@
 import grpc
 import logging
 import time
-from google.protobuf import empty_pb2 as google_pb2
+from rich import print_json
 
-from protobuf import playback_pb2_grpc
 from protobuf import streaming_pb2_grpc, streaming_pb2
 
 from Manager.roomManager import RoomManager
@@ -19,10 +18,17 @@ class SyncService(streaming_pb2_grpc.SyncService):
         self.redis_manager = RedisManager()
         self.room_manager = RoomManager()
 
-    def MeasureTiming(self, request, context):
-        pass
+    def SendHostCommand(self, request_iterator, context):
+        for request in request_iterator:
+            print(f"Request: {request}")
+            yield streaming_pb2.ServerResponse(
+                error_message="ok",
+                member_statuses=[],
+                ready_member_count=100,
+                total_member_count=50
+            )
     
-    def Sync(self, request, context):
+    def TimingSync(self, request, context):
         server_receive_time = int(time.time() * 1000)
         server_send_time = int(time.time() * 1000)
 
@@ -31,7 +37,7 @@ class SyncService(streaming_pb2_grpc.SyncService):
             server_send_ms=server_send_time
         )
 
-    def SyncPlayback(self, request, context):
+    def MemberSync(self, request, context):
         pass
     
 

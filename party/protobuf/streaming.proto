@@ -4,20 +4,6 @@ package ListeningParty;
 import "protobuf/track.proto";
 import "protobuf/common.proto";
 
-message SyncMeasurement {
-  int64 client_send_ms = 1;      
-  int64 server_receive_ms = 2;        
-  int64 server_send_ms = 3;           
-  int64 client_receive_ms = 4;        
-  string client_id = 5;               
-}
-
-message SyncResponse {
-  int64 server_timestamp_ms = 1;      
-  float recommended_adjustment = 2;   
-  int32 estimated_offset_ms = 3;      
-}
-
 message SyncRequest {
   int64 client_send_ms = 1;
 }
@@ -27,7 +13,19 @@ message SyncReply {
   int64 server_send_ms = 2;
 }
 
-message PlaybackCommand {
+// Host Playback
+message HostTrackCommand {
+  
+}
+
+message HostPositionUpdate {
+    string room_id = 1;
+    int64 current_position_ms = 2;
+    int64 server_timestamp_ms = 3;
+    string host_user_id = 4;
+}
+
+message HostPlaybackCommand {
   enum CommandType {
     PLAY = 0;
     PAUSE = 1;
@@ -35,25 +33,80 @@ message PlaybackCommand {
     TRACK_CHANGE = 3;
     ADJUST_RATE = 4;
   }
-  
-  CommandType type = 1;
-  int64 server_timestamp_ms = 2;      
-  int64 position_ms = 3;              
-  Track track = 4;                    
-  float playback_rate = 5;            
+
+  string room_id = 1;
+  CommandType type = 2;
+  int64 execute_at_server_ms = 3;      
+  int64 position_ms = 4; 
+  string host_user_id = 5;             
 }
 
-message ClientState {
-  int64 client_timestamp_ms = 1;
-  int64 playback_position_ms = 2;
-  string current_track_id = 3;
-  PlaybackStatus status = 4;
-  float current_playback_rate = 5;
-  int32 buffer_health_ms = 6;         
+message HostCommand {
+    oneof command {
+        HostTrackCommand track_command = 1;
+        HostPositionUpdate position_update = 2;
+        HostPlaybackCommand control_command = 3;
+    }
+}
+
+message MemberStatus {
+    enum StatusType {
+        JOINED = 0;
+        TRACK_LOADED = 1;
+        READY_TO_PLAY = 2;
+        PLAYING = 3;
+        PAUSED = 4;
+        SYNCING = 5;
+        SYNCED = 6;
+        DESYNC = 7;
+        ERROR = 8;
+    }
+    
+    string room_id = 1;
+    string user_id = 2;
+    StatusType status = 3;
+    int64 actual_position_ms = 4;
+    int64 client_timestamp_ms = 5;
+    string error_message = 6;
+}
+
+message ServerBroadcast {
+    enum BroadcastType {
+        TRACK_COMMAND = 0;
+        POSITION_UPDATE = 1;
+        CONTROL_COMMAND = 2;
+        HOST_CHANGED = 3;
+        MEMBER_JOINED = 4;
+        MEMBER_LEFT = 5;
+    }
+    
+    string room_id = 1;
+    BroadcastType type = 2;
+    
+    HostTrackCommand track_command = 3;
+    HostPositionUpdate position_update = 4;
+    HostPlaybackCommand control_command = 5;
+    string new_host_user_id = 6;
+    string affected_user_id = 7;
+}
+
+message ServerResponse {
+    enum ResponseType {
+        ACKNOWLEDGED = 0;
+        MEMBER_COUNT_UPDATE = 1;
+        MEMBER_STATUS_UPDATE = 2;
+        ERROR = 3;
+    }
+    
+    ResponseType type = 1;
+    int32 ready_member_count = 2;
+    int32 total_member_count = 3;
+    repeated MemberStatus member_statuses = 4;
+    string error_message = 5;
 }
 
 service SyncService {
-  rpc MeasureTiming(SyncMeasurement) returns (SyncResponse);  
-  rpc Sync(SyncRequest) returns (SyncReply);
-  rpc BidirectionalSync(stream ClientState) returns (stream PlaybackCommand);
+  rpc SendHostCommand(stream HostCommand) returns (stream ServerResponse);  
+  rpc TimingSync(SyncRequest) returns (SyncReply);
+  rpc MemberSync(stream MemberStatus) returns (stream ServerBroadcast);
 }

@@ -250,7 +250,7 @@ class RoomManager():
                     'room_code': room[3],
                     'host_user_id': room[4],
                     'visibility': room[5],
-                    'status': room[9],
+                    'status': room[8],
                     'created_at': room[6],
                     'updated_at': room[7]
                 }

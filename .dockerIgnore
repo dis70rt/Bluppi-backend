@@ -1,1 +1,12 @@
+__pycache__
+*.pyc
+*.pyo
+*.db
+*.sqlite3
+*.log
+*.lock
 .venv
+.env
+.idea
+.vscode
+*.egg-info

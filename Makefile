@@ -1,57 +1,19 @@
-APP_NAME = app.server:app
-SOCKET_NAME = chat.server:app
-SOCKET_PORT = 8080
-PORT = 8000
-VENV = .venv
-
-PYTHON = $(VENV)/bin/python3
-UVICORN = $(VENV)/bin/uvicorn
-PIP = $(VENV)/bin/pip
-
-venv:
-	python3 -m venv $(VENV)
-	$(PIP) install --upgrade pip
-	$(VENV)/bin/uv venv
-
-install:
-	$(VENV)/bin/uv install
-
-start-services:
-	sudo systemctl start redis-server
-	sudo systemctl start postgresql
-
-up: start-services
-	@echo "Starting main app on port $(PORT)"
-	$(UVICORN) $(APP_NAME) --port $(PORT) --reload &
-	echo $$! > .main_pid
-	@echo "Starting socket server on port $(SOCKET_PORT)"
-	$(UVICORN) $(SOCKET_NAME) --port $(SOCKET_PORT) --reload &
-	echo $$! > .socket_pid
-	@echo "Both servers started."
-
-prod:
-	@echo "Starting production servers with main.py..."
-	$(PYTHON) main.py
-
-up-detached: start-services
-	nohup $(UVICORN) $(APP_NAME) --port $(PORT) --reload > app.log 2>&1 &
-	echo $$! > .main_pid
-	cd chat && nohup $(UVICORN) $(SOCKET_NAME) --port $(SOCKET_PORT) --reload > socket.log 2>&1 &
-	echo $$! > .socket_pid
+up:
+	@./start.sh
+	sudo docker compose up -d --build
 
 down:
-	@echo "Stopping servers..."
-	-kill -9 $$(cat .main_pid) 2>/dev/null || true
-	-kill -9 $$(cat .socket_pid) 2>/dev/null || true
-	rm -f .main_pid .socket_pid
+	sudo docker compose down
 
 clean:
-	rm -rf $(VENV) __pycache__ .main_pid .socket_pid *.log
-
-rebuild: clean venv install
+	rm -rf __pycache__ .*.pid *.log
 
 status:
-	ps aux | grep 'uvicorn'
+	docker ps -a --format "table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}"
+	@echo "Redis status:"
+	sudo systemctl status redis-server
+	@echo "PostgreSQL status:"
+	sudo systemctl status postgresql
 
 logs:
-	tail -f app.log socket.log
+	multitail -cS dockerhttp -s 2 -l "docker logs -f bluppi-py-api-1" -l "docker logs -f bluppi-py-api-1"

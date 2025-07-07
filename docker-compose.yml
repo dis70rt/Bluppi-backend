@@ -1,0 +1,58 @@
+services:
+  api:
+    network_mode: "host"
+    build: .
+    command: ["uv", "run", "uvicorn", "app.server:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+    volumes:
+      - ./app:/workspace/app
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      CHAT_DB_NAME: ${CHAT_DB_NAME}
+      REDIS_HOST: ${DB_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DB: ${REDIS_DB}
+      WS_HOST: ${DB_HOST}
+      WS_PORT: ${WS_PORT}
+
+  ws1:
+    network_mode: "host"
+    build: .
+    command: ["uv", "run", "uvicorn", "chat.server:app", "--reload", "--host", "0.0.0.0", "--port", "8080"]
+    volumes:
+      - ./chat:/workspace/chat
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      CHAT_DB_NAME: ${CHAT_DB_NAME}
+      REDIS_HOST: ${DB_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DB: ${REDIS_DB}
+      WS_HOST: ${DB_HOST}
+      WS_PORT: ${WS_PORT}
+
+
+  tunnel:
+    network_mode: host
+    image: cloudflare/cloudflared:latest
+    user: root
+    command: ["--config", "/etc/cloudflared/config.yaml", "tunnel", "run"]
+    depends_on:
+      - api
+      - ws1
+    volumes:
+      - /home/ethernode/.cloudflared:/etc/cloudflared:ro
+
+networks:
+  tunnel-net:
+    driver: bridge

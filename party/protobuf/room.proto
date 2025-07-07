@@ -19,6 +19,10 @@ message Room {
     string host_user_id = 9;
     PlaybackState playback_state = 10;
     Track current_track = 11;
+    int64 current_position_ms = 12;
+    int64 last_position_update = 13;
+    int64 track_start_time = 14;
+    bool is_playing = 15;
 }
 
 message CreateRoomRequest {

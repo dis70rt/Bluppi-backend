@@ -83,7 +83,7 @@ class RoomService(room_pb2_grpc.RoomServiceServicer):
                 room.room_code = room_data['room_code']
                 room.host_user_id = room_data['host_user_id']
                 room.visibility = common_pb2.PUBLIC if room_data['visibility'] == 'PUBLIC' else common_pb2.PRIVATE
-                room.invite_only = room_data['invite_only']
+                room.invite_only = False
                 room.status = common_pb2.ACTIVE
             
             return response
@@ -135,7 +135,7 @@ class RoomService(room_pb2_grpc.RoomServiceServicer):
                 room_code=room_info['room_code'],
                 host_user_id=room_info['host_user_id'],
                 visibility=common_pb2.PUBLIC if room_info['visibility'] == 'PUBLIC' else common_pb2.PRIVATE,
-                invite_only=room_info['invite_only'],
+                invite_only=False,
                 status=common_pb2.ACTIVE
             )
             

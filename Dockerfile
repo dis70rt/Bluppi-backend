@@ -2,17 +2,18 @@ FROM python:3.12-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-WORKDIR /app
+ENV VIRTUAL_ENV=/opt/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-ENV PATH="/bin:$PATH"
+WORKDIR /workspace
+
 COPY pyproject.toml uv.lock ./
 
-RUN uv venv && \
-    uv pip install --upgrade pip && \
-    uv sync --frozen --no-cache
+RUN uv venv $VIRTUAL_ENV \
+    && uv sync --frozen --no-cache \
+    && uv pip install uvicorn
 
-ENV PATH="/app/.venv/bin:$PATH"
+COPY app/ ./app/
+COPY chat/ ./chat/
 
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--reload"]
+EXPOSE 8000 8080

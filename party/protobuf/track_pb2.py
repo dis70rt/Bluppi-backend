@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14protobuf/track.proto\x12\x0eListeningParty\"`\n\x05Track\x12\x10\n\x08track_id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0e\n\x06\x61rtist\x18\x03 \x01(\t\x12\x11\n\timage_url\x18\x04 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x05 \x01(\x05\"#\n\x0fGetTrackRequest\x12\x10\n\x08track_id\x18\x01 \x01(\t\"K\n\x13SearchTracksRequest\x12\r\n\x05query\x18\x01 \x01(\t\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t\"V\n\x14SearchTracksResponse\x12%\n\x06tracks\x18\x01 \x03(\x0b\x32\x15.ListeningParty.Track\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\xad\x01\n\x0cTrackService\x12\x42\n\x08GetTrack\x12\x1f.ListeningParty.GetTrackRequest\x1a\x15.ListeningParty.Track\x12Y\n\x0cSearchTracks\x12#.ListeningParty.SearchTracksRequest\x1a$.ListeningParty.SearchTracksResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14protobuf/track.proto\x12\x0eListeningParty\"s\n\x05Track\x12\x10\n\x08track_id\x18\x01 \x01(\t\x12\r\n\x05title\x18\x02 \x01(\t\x12\x0e\n\x06\x61rtist\x18\x03 \x01(\t\x12\x11\n\timage_url\x18\x04 \x01(\t\x12\x13\n\x0b\x64uration_ms\x18\x05 \x01(\x05\x12\x11\n\taudio_url\x18\x06 \x01(\t\"#\n\x0fGetTrackRequest\x12\x10\n\x08track_id\x18\x01 \x01(\t\"K\n\x13SearchTracksRequest\x12\r\n\x05query\x18\x01 \x01(\t\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t\"V\n\x14SearchTracksResponse\x12%\n\x06tracks\x18\x01 \x03(\x0b\x32\x15.ListeningParty.Track\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\xad\x01\n\x0cTrackService\x12\x42\n\x08GetTrack\x12\x1f.ListeningParty.GetTrackRequest\x1a\x15.ListeningParty.Track\x12Y\n\x0cSearchTracks\x12#.ListeningParty.SearchTracksRequest\x1a$.ListeningParty.SearchTracksResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,13 +32,13 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protobuf.track_pb2', _globa
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_TRACK']._serialized_start=40
-  _globals['_TRACK']._serialized_end=136
-  _globals['_GETTRACKREQUEST']._serialized_start=138
-  _globals['_GETTRACKREQUEST']._serialized_end=173
-  _globals['_SEARCHTRACKSREQUEST']._serialized_start=175
-  _globals['_SEARCHTRACKSREQUEST']._serialized_end=250
-  _globals['_SEARCHTRACKSRESPONSE']._serialized_start=252
-  _globals['_SEARCHTRACKSRESPONSE']._serialized_end=338
-  _globals['_TRACKSERVICE']._serialized_start=341
-  _globals['_TRACKSERVICE']._serialized_end=514
+  _globals['_TRACK']._serialized_end=155
+  _globals['_GETTRACKREQUEST']._serialized_start=157
+  _globals['_GETTRACKREQUEST']._serialized_end=192
+  _globals['_SEARCHTRACKSREQUEST']._serialized_start=194
+  _globals['_SEARCHTRACKSREQUEST']._serialized_end=269
+  _globals['_SEARCHTRACKSRESPONSE']._serialized_start=271
+  _globals['_SEARCHTRACKSRESPONSE']._serialized_end=357
+  _globals['_TRACKSERVICE']._serialized_start=360
+  _globals['_TRACKSERVICE']._serialized_end=533
 # @@protoc_insertion_point(module_scope)

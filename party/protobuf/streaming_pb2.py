@@ -26,27 +26,39 @@ from protobuf import track_pb2 as protobuf_dot_track__pb2
 from protobuf import common_pb2 as protobuf_dot_common__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18protobuf/streaming.proto\x12\x0eListeningParty\x1a\x14protobuf/track.proto\x1a\x15protobuf/common.proto\"\x8a\x01\n\x0fSyncMeasurement\x12\x16\n\x0e\x63lient_send_ms\x18\x01 \x01(\x03\x12\x19\n\x11server_receive_ms\x18\x02 \x01(\x03\x12\x16\n\x0eserver_send_ms\x18\x03 \x01(\x03\x12\x19\n\x11\x63lient_receive_ms\x18\x04 \x01(\x03\x12\x11\n\tclient_id\x18\x05 \x01(\t\"h\n\x0cSyncResponse\x12\x1b\n\x13server_timestamp_ms\x18\x01 \x01(\x03\x12\x1e\n\x16recommended_adjustment\x18\x02 \x01(\x02\x12\x1b\n\x13\x65stimated_offset_ms\x18\x03 \x01(\x05\"%\n\x0bSyncRequest\x12\x16\n\x0e\x63lient_send_ms\x18\x01 \x01(\x03\">\n\tSyncReply\x12\x19\n\x11server_receive_ms\x18\x01 \x01(\x03\x12\x16\n\x0eserver_send_ms\x18\x02 \x01(\x03\"\x8c\x02\n\x0fPlaybackCommand\x12\x39\n\x04type\x18\x01 \x01(\x0e\x32+.ListeningParty.PlaybackCommand.CommandType\x12\x1b\n\x13server_timestamp_ms\x18\x02 \x01(\x03\x12\x13\n\x0bposition_ms\x18\x03 \x01(\x03\x12$\n\x05track\x18\x04 \x01(\x0b\x32\x15.ListeningParty.Track\x12\x15\n\rplayback_rate\x18\x05 \x01(\x02\"O\n\x0b\x43ommandType\x12\x08\n\x04PLAY\x10\x00\x12\t\n\x05PAUSE\x10\x01\x12\x08\n\x04SEEK\x10\x02\x12\x10\n\x0cTRACK_CHANGE\x10\x03\x12\x0f\n\x0b\x41\x44JUST_RATE\x10\x04\"\xcb\x01\n\x0b\x43lientState\x12\x1b\n\x13\x63lient_timestamp_ms\x18\x01 \x01(\x03\x12\x1c\n\x14playback_position_ms\x18\x02 \x01(\x03\x12\x18\n\x10\x63urrent_track_id\x18\x03 \x01(\t\x12.\n\x06status\x18\x04 \x01(\x0e\x32\x1e.ListeningParty.PlaybackStatus\x12\x1d\n\x15\x63urrent_playback_rate\x18\x05 \x01(\x02\x12\x18\n\x10\x62uffer_health_ms\x18\x06 \x01(\x05\x32\xf4\x01\n\x0bSyncService\x12N\n\rMeasureTiming\x12\x1f.ListeningParty.SyncMeasurement\x1a\x1c.ListeningParty.SyncResponse\x12>\n\x04Sync\x12\x1b.ListeningParty.SyncRequest\x1a\x19.ListeningParty.SyncReply\x12U\n\x11\x42idirectionalSync\x12\x1b.ListeningParty.ClientState\x1a\x1f.ListeningParty.PlaybackCommand(\x01\x30\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18protobuf/streaming.proto\x12\x0eListeningParty\x1a\x14protobuf/track.proto\x1a\x15protobuf/common.proto\"%\n\x0bSyncRequest\x12\x16\n\x0e\x63lient_send_ms\x18\x01 \x01(\x03\">\n\tSyncReply\x12\x19\n\x11server_receive_ms\x18\x01 \x01(\x03\x12\x16\n\x0eserver_send_ms\x18\x02 \x01(\x03\"\x93\x01\n\x10HostTrackCommand\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12$\n\x05track\x18\x02 \x01(\x0b\x32\x15.ListeningParty.Track\x12\x1a\n\x12start_at_server_ms\x18\x03 \x01(\x03\x12\x16\n\x0estart_position\x18\x04 \x01(\x03\x12\x14\n\x0chost_user_id\x18\x06 \x01(\t\"u\n\x12HostPositionUpdate\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x1b\n\x13\x63urrent_position_ms\x18\x02 \x01(\x03\x12\x1b\n\x13server_timestamp_ms\x18\x03 \x01(\x03\x12\x14\n\x0chost_user_id\x18\x04 \x01(\t\"\xff\x01\n\x13HostPlaybackCommand\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12=\n\x04type\x18\x02 \x01(\x0e\x32/.ListeningParty.HostPlaybackCommand.CommandType\x12\x1c\n\x14\x65xecute_at_server_ms\x18\x03 \x01(\x03\x12\x13\n\x0bposition_ms\x18\x04 \x01(\x03\x12\x14\n\x0chost_user_id\x18\x05 \x01(\t\"O\n\x0b\x43ommandType\x12\x08\n\x04PLAY\x10\x00\x12\t\n\x05PAUSE\x10\x01\x12\x08\n\x04SEEK\x10\x02\x12\x10\n\x0cTRACK_CHANGE\x10\x03\x12\x0f\n\x0b\x41\x44JUST_RATE\x10\x04\"\xd2\x01\n\x0bHostCommand\x12\x39\n\rtrack_command\x18\x01 \x01(\x0b\x32 .ListeningParty.HostTrackCommandH\x00\x12=\n\x0fposition_update\x18\x02 \x01(\x0b\x32\".ListeningParty.HostPositionUpdateH\x00\x12>\n\x0f\x63ontrol_command\x18\x03 \x01(\x0b\x32#.ListeningParty.HostPlaybackCommandH\x00\x42\t\n\x07\x63ommand\"\xc2\x02\n\x0cMemberStatus\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12\x37\n\x06status\x18\x03 \x01(\x0e\x32\'.ListeningParty.MemberStatus.StatusType\x12\x1a\n\x12\x61\x63tual_position_ms\x18\x04 \x01(\x03\x12\x1b\n\x13\x63lient_timestamp_ms\x18\x05 \x01(\x03\x12\x15\n\rerror_message\x18\x06 \x01(\t\"\x86\x01\n\nStatusType\x12\n\n\x06JOINED\x10\x00\x12\x10\n\x0cTRACK_LOADED\x10\x01\x12\x11\n\rREADY_TO_PLAY\x10\x02\x12\x0b\n\x07PLAYING\x10\x03\x12\n\n\x06PAUSED\x10\x04\x12\x0b\n\x07SYNCING\x10\x05\x12\n\n\x06SYNCED\x10\x06\x12\n\n\x06\x44\x45SYNC\x10\x07\x12\t\n\x05\x45RROR\x10\x08\"\xcc\x03\n\x0fServerBroadcast\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12;\n\x04type\x18\x02 \x01(\x0e\x32-.ListeningParty.ServerBroadcast.BroadcastType\x12\x37\n\rtrack_command\x18\x03 \x01(\x0b\x32 .ListeningParty.HostTrackCommand\x12;\n\x0fposition_update\x18\x04 \x01(\x0b\x32\".ListeningParty.HostPositionUpdate\x12<\n\x0f\x63ontrol_command\x18\x05 \x01(\x0b\x32#.ListeningParty.HostPlaybackCommand\x12\x18\n\x10new_host_user_id\x18\x06 \x01(\t\x12\x18\n\x10\x61\x66\x66\x65\x63ted_user_id\x18\x07 \x01(\t\"\x82\x01\n\rBroadcastType\x12\x11\n\rTRACK_COMMAND\x10\x00\x12\x13\n\x0fPOSITION_UPDATE\x10\x01\x12\x13\n\x0f\x43ONTROL_COMMAND\x10\x02\x12\x10\n\x0cHOST_CHANGED\x10\x03\x12\x11\n\rMEMBER_JOINED\x10\x04\x12\x0f\n\x0bMEMBER_LEFT\x10\x05\"\xb1\x02\n\x0eServerResponse\x12\x39\n\x04type\x18\x01 \x01(\x0e\x32+.ListeningParty.ServerResponse.ResponseType\x12\x1a\n\x12ready_member_count\x18\x02 \x01(\x05\x12\x1a\n\x12total_member_count\x18\x03 \x01(\x05\x12\x35\n\x0fmember_statuses\x18\x04 \x03(\x0b\x32\x1c.ListeningParty.MemberStatus\x12\x15\n\rerror_message\x18\x05 \x01(\t\"^\n\x0cResponseType\x12\x10\n\x0c\x41\x43KNOWLEDGED\x10\x00\x12\x17\n\x13MEMBER_COUNT_UPDATE\x10\x01\x12\x18\n\x14MEMBER_STATUS_UPDATE\x10\x02\x12\t\n\x05\x45RROR\x10\x03\x32\xf8\x01\n\x0bSyncService\x12R\n\x0fSendHostCommand\x12\x1b.ListeningParty.HostCommand\x1a\x1e.ListeningParty.ServerResponse(\x01\x30\x01\x12\x44\n\nTimingSync\x12\x1b.ListeningParty.SyncRequest\x1a\x19.ListeningParty.SyncReply\x12O\n\nMemberSync\x12\x1c.ListeningParty.MemberStatus\x1a\x1f.ListeningParty.ServerBroadcast(\x01\x30\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protobuf.streaming_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
-  _globals['_SYNCMEASUREMENT']._serialized_start=90
-  _globals['_SYNCMEASUREMENT']._serialized_end=228
-  _globals['_SYNCRESPONSE']._serialized_start=230
-  _globals['_SYNCRESPONSE']._serialized_end=334
-  _globals['_SYNCREQUEST']._serialized_start=336
-  _globals['_SYNCREQUEST']._serialized_end=373
-  _globals['_SYNCREPLY']._serialized_start=375
-  _globals['_SYNCREPLY']._serialized_end=437
-  _globals['_PLAYBACKCOMMAND']._serialized_start=440
-  _globals['_PLAYBACKCOMMAND']._serialized_end=708
-  _globals['_PLAYBACKCOMMAND_COMMANDTYPE']._serialized_start=629
-  _globals['_PLAYBACKCOMMAND_COMMANDTYPE']._serialized_end=708
-  _globals['_CLIENTSTATE']._serialized_start=711
-  _globals['_CLIENTSTATE']._serialized_end=914
-  _globals['_SYNCSERVICE']._serialized_start=917
-  _globals['_SYNCSERVICE']._serialized_end=1161
+  _globals['_SYNCREQUEST']._serialized_start=89
+  _globals['_SYNCREQUEST']._serialized_end=126
+  _globals['_SYNCREPLY']._serialized_start=128
+  _globals['_SYNCREPLY']._serialized_end=190
+  _globals['_HOSTTRACKCOMMAND']._serialized_start=193
+  _globals['_HOSTTRACKCOMMAND']._serialized_end=340
+  _globals['_HOSTPOSITIONUPDATE']._serialized_start=342
+  _globals['_HOSTPOSITIONUPDATE']._serialized_end=459
+  _globals['_HOSTPLAYBACKCOMMAND']._serialized_start=462
+  _globals['_HOSTPLAYBACKCOMMAND']._serialized_end=717
+  _globals['_HOSTPLAYBACKCOMMAND_COMMANDTYPE']._serialized_start=638
+  _globals['_HOSTPLAYBACKCOMMAND_COMMANDTYPE']._serialized_end=717
+  _globals['_HOSTCOMMAND']._serialized_start=720
+  _globals['_HOSTCOMMAND']._serialized_end=930
+  _globals['_MEMBERSTATUS']._serialized_start=933
+  _globals['_MEMBERSTATUS']._serialized_end=1255
+  _globals['_MEMBERSTATUS_STATUSTYPE']._serialized_start=1121
+  _globals['_MEMBERSTATUS_STATUSTYPE']._serialized_end=1255
+  _globals['_SERVERBROADCAST']._serialized_start=1258
+  _globals['_SERVERBROADCAST']._serialized_end=1718
+  _globals['_SERVERBROADCAST_BROADCASTTYPE']._serialized_start=1588
+  _globals['_SERVERBROADCAST_BROADCASTTYPE']._serialized_end=1718
+  _globals['_SERVERRESPONSE']._serialized_start=1721
+  _globals['_SERVERRESPONSE']._serialized_end=2026
+  _globals['_SERVERRESPONSE_RESPONSETYPE']._serialized_start=1932
+  _globals['_SERVERRESPONSE_RESPONSETYPE']._serialized_end=2026
+  _globals['_SYNCSERVICE']._serialized_start=2029
+  _globals['_SYNCSERVICE']._serialized_end=2277
 # @@protoc_insertion_point(module_scope)

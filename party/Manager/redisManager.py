@@ -5,11 +5,19 @@ import time
 import uuid
 from typing import Set
 
+import os
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_port = int(os.getenv("REDIS_PORT", 6379))
+redis_db   = int(os.getenv("REDIS_DB",   0))
+
 class RedisManager:
     def __init__(self):
         self.redis_client = redis.Redis(
-            host='localhost',
-            port=6379,
+            host=redis_host,
+            port=redis_port,
             decode_responses=True
         )
         self.pubsub = self.redis_client.pubsub()

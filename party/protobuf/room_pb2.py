@@ -29,7 +29,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13protobuf/room.proto\x12\x0eListeningParty\x1a\x15protobuf/common.proto\x1a\x14protobuf/track.proto\x1a\x17protobuf/playback.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe5\x02\n\x04Room\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x11\n\troom_code\x18\x04 \x01(\t\x12*\n\x06status\x18\x05 \x01(\x0e\x32\x1a.ListeningParty.RoomStatus\x12\x32\n\nvisibility\x18\x06 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibility\x12\x13\n\x0binvite_only\x18\x07 \x01(\x08\x12+\n\x07members\x18\x08 \x03(\x0b\x32\x1a.ListeningParty.RoomMember\x12\x14\n\x0chost_user_id\x18\t \x01(\t\x12\x35\n\x0eplayback_state\x18\n \x01(\x0b\x32\x1d.ListeningParty.PlaybackState\x12,\n\rcurrent_track\x18\x0b \x01(\x0b\x32\x15.ListeningParty.Track\"\xa8\x01\n\x11\x43reateRoomRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x11\n\troom_code\x18\x03 \x01(\t\x12\x32\n\nvisibility\x18\x04 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibility\x12\x13\n\x0binvite_only\x18\x05 \x01(\x08\x12\x14\n\x0chost_user_id\x18\x06 \x01(\t\"!\n\x0eGetRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\")\n\x14GetRoomByCodeRequest\x12\x11\n\troom_code\x18\x01 \x01(\t\"\xdc\x01\n\x11UpdateRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x11\n\x04name\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x18\n\x0b\x64\x65scription\x18\x03 \x01(\tH\x01\x88\x01\x01\x12\x37\n\nvisibility\x18\x04 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibilityH\x02\x88\x01\x01\x12\x18\n\x0binvite_only\x18\x05 \x01(\x08H\x03\x88\x01\x01\x42\x07\n\x05_nameB\x0e\n\x0c_descriptionB\r\n\x0b_visibilityB\x0e\n\x0c_invite_only\"$\n\x11\x44\x65leteRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\"\x9b\x02\n\x10ListRoomsRequest\x12>\n\x11visibility_filter\x18\x01 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibilityH\x00\x88\x01\x01\x12 \n\x13host_user_id_filter\x18\x02 \x01(\tH\x01\x88\x01\x01\x12,\n\x1finclude_private_rooms_if_member\x18\x03 \x01(\x08H\x02\x88\x01\x01\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\tB\x14\n\x12_visibility_filterB\x16\n\x14_host_user_id_filterB\"\n _include_private_rooms_if_member\"Q\n\x11ListRoomsResponse\x12#\n\x05rooms\x18\x01 \x03(\x0b\x32\x14.ListeningParty.Room\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"X\n\x0fJoinRoomRequest\x12\x11\n\x07room_id\x18\x01 \x01(\tH\x00\x12\x13\n\troom_code\x18\x02 \x01(\tH\x00\x12\x0f\n\x07user_id\x18\x03 \x01(\tB\x0c\n\nidentifier\"4\n\x10LeaveRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\"X\n\x13InviteToRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x17\n\x0finviter_user_id\x18\x02 \x01(\t\x12\x17\n\x0finvitee_user_id\x18\x03 \x01(\t\"Z\n\x13KickFromRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x1a\n\x12performing_user_id\x18\x02 \x01(\t\x12\x16\n\x0ekicked_user_id\x18\x03 \x01(\t\"\xf1\x01\n\nRoomMember\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12,\n\x04role\x18\x03 \x01(\x0e\x32\x1e.ListeningParty.RoomMemberRole\x12\x17\n\ninvited_by\x18\x04 \x01(\tH\x00\x88\x01\x01\x12-\n\tjoined_at\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x30\n\x07left_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x01\x88\x01\x01\x42\r\n\x0b_invited_byB\n\n\x08_left_at2\x9b\x05\n\x0bRoomService\x12\x45\n\nCreateRoom\x12!.ListeningParty.CreateRoomRequest\x1a\x14.ListeningParty.Room\x12?\n\x07GetRoom\x12\x1e.ListeningParty.GetRoomRequest\x1a\x14.ListeningParty.Room\x12\x45\n\nUpdateRoom\x12!.ListeningParty.UpdateRoomRequest\x1a\x14.ListeningParty.Room\x12G\n\nDeleteRoom\x12!.ListeningParty.DeleteRoomRequest\x1a\x16.google.protobuf.Empty\x12P\n\tListRooms\x12 .ListeningParty.ListRoomsRequest\x1a!.ListeningParty.ListRoomsResponse\x12\x41\n\x08JoinRoom\x12\x1f.ListeningParty.JoinRoomRequest\x1a\x14.ListeningParty.Room\x12\x45\n\tLeaveRoom\x12 .ListeningParty.LeaveRoomRequest\x1a\x16.google.protobuf.Empty\x12K\n\x0cInviteToRoom\x12#.ListeningParty.InviteToRoomRequest\x1a\x16.google.protobuf.Empty\x12K\n\x0cKickFromRoom\x12#.ListeningParty.KickFromRoomRequest\x1a\x16.google.protobuf.Emptyb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13protobuf/room.proto\x12\x0eListeningParty\x1a\x15protobuf/common.proto\x1a\x14protobuf/track.proto\x1a\x17protobuf/playback.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xce\x03\n\x04Room\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x11\n\troom_code\x18\x04 \x01(\t\x12*\n\x06status\x18\x05 \x01(\x0e\x32\x1a.ListeningParty.RoomStatus\x12\x32\n\nvisibility\x18\x06 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibility\x12\x13\n\x0binvite_only\x18\x07 \x01(\x08\x12+\n\x07members\x18\x08 \x03(\x0b\x32\x1a.ListeningParty.RoomMember\x12\x14\n\x0chost_user_id\x18\t \x01(\t\x12\x35\n\x0eplayback_state\x18\n \x01(\x0b\x32\x1d.ListeningParty.PlaybackState\x12,\n\rcurrent_track\x18\x0b \x01(\x0b\x32\x15.ListeningParty.Track\x12\x1b\n\x13\x63urrent_position_ms\x18\x0c \x01(\x03\x12\x1c\n\x14last_position_update\x18\r \x01(\x03\x12\x18\n\x10track_start_time\x18\x0e \x01(\x03\x12\x12\n\nis_playing\x18\x0f \x01(\x08\"\xa8\x01\n\x11\x43reateRoomRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x11\n\troom_code\x18\x03 \x01(\t\x12\x32\n\nvisibility\x18\x04 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibility\x12\x13\n\x0binvite_only\x18\x05 \x01(\x08\x12\x14\n\x0chost_user_id\x18\x06 \x01(\t\"!\n\x0eGetRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\")\n\x14GetRoomByCodeRequest\x12\x11\n\troom_code\x18\x01 \x01(\t\"\xdc\x01\n\x11UpdateRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x11\n\x04name\x18\x02 \x01(\tH\x00\x88\x01\x01\x12\x18\n\x0b\x64\x65scription\x18\x03 \x01(\tH\x01\x88\x01\x01\x12\x37\n\nvisibility\x18\x04 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibilityH\x02\x88\x01\x01\x12\x18\n\x0binvite_only\x18\x05 \x01(\x08H\x03\x88\x01\x01\x42\x07\n\x05_nameB\x0e\n\x0c_descriptionB\r\n\x0b_visibilityB\x0e\n\x0c_invite_only\"$\n\x11\x44\x65leteRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\"\x9b\x02\n\x10ListRoomsRequest\x12>\n\x11visibility_filter\x18\x01 \x01(\x0e\x32\x1e.ListeningParty.RoomVisibilityH\x00\x88\x01\x01\x12 \n\x13host_user_id_filter\x18\x02 \x01(\tH\x01\x88\x01\x01\x12,\n\x1finclude_private_rooms_if_member\x18\x03 \x01(\x08H\x02\x88\x01\x01\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\tB\x14\n\x12_visibility_filterB\x16\n\x14_host_user_id_filterB\"\n _include_private_rooms_if_member\"Q\n\x11ListRoomsResponse\x12#\n\x05rooms\x18\x01 \x03(\x0b\x32\x14.ListeningParty.Room\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"X\n\x0fJoinRoomRequest\x12\x11\n\x07room_id\x18\x01 \x01(\tH\x00\x12\x13\n\troom_code\x18\x02 \x01(\tH\x00\x12\x0f\n\x07user_id\x18\x03 \x01(\tB\x0c\n\nidentifier\"4\n\x10LeaveRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\"X\n\x13InviteToRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x17\n\x0finviter_user_id\x18\x02 \x01(\t\x12\x17\n\x0finvitee_user_id\x18\x03 \x01(\t\"Z\n\x13KickFromRoomRequest\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x1a\n\x12performing_user_id\x18\x02 \x01(\t\x12\x16\n\x0ekicked_user_id\x18\x03 \x01(\t\"\xf1\x01\n\nRoomMember\x12\x0f\n\x07room_id\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\t\x12,\n\x04role\x18\x03 \x01(\x0e\x32\x1e.ListeningParty.RoomMemberRole\x12\x17\n\ninvited_by\x18\x04 \x01(\tH\x00\x88\x01\x01\x12-\n\tjoined_at\x18\x05 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x30\n\x07left_at\x18\x06 \x01(\x0b\x32\x1a.google.protobuf.TimestampH\x01\x88\x01\x01\x42\r\n\x0b_invited_byB\n\n\x08_left_at2\x9b\x05\n\x0bRoomService\x12\x45\n\nCreateRoom\x12!.ListeningParty.CreateRoomRequest\x1a\x14.ListeningParty.Room\x12?\n\x07GetRoom\x12\x1e.ListeningParty.GetRoomRequest\x1a\x14.ListeningParty.Room\x12\x45\n\nUpdateRoom\x12!.ListeningParty.UpdateRoomRequest\x1a\x14.ListeningParty.Room\x12G\n\nDeleteRoom\x12!.ListeningParty.DeleteRoomRequest\x1a\x16.google.protobuf.Empty\x12P\n\tListRooms\x12 .ListeningParty.ListRoomsRequest\x1a!.ListeningParty.ListRoomsResponse\x12\x41\n\x08JoinRoom\x12\x1f.ListeningParty.JoinRoomRequest\x1a\x14.ListeningParty.Room\x12\x45\n\tLeaveRoom\x12 .ListeningParty.LeaveRoomRequest\x1a\x16.google.protobuf.Empty\x12K\n\x0cInviteToRoom\x12#.ListeningParty.InviteToRoomRequest\x1a\x16.google.protobuf.Empty\x12K\n\x0cKickFromRoom\x12#.ListeningParty.KickFromRoomRequest\x1a\x16.google.protobuf.Emptyb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,31 +37,31 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'protobuf.room_pb2', _global
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_ROOM']._serialized_start=172
-  _globals['_ROOM']._serialized_end=529
-  _globals['_CREATEROOMREQUEST']._serialized_start=532
-  _globals['_CREATEROOMREQUEST']._serialized_end=700
-  _globals['_GETROOMREQUEST']._serialized_start=702
-  _globals['_GETROOMREQUEST']._serialized_end=735
-  _globals['_GETROOMBYCODEREQUEST']._serialized_start=737
-  _globals['_GETROOMBYCODEREQUEST']._serialized_end=778
-  _globals['_UPDATEROOMREQUEST']._serialized_start=781
-  _globals['_UPDATEROOMREQUEST']._serialized_end=1001
-  _globals['_DELETEROOMREQUEST']._serialized_start=1003
-  _globals['_DELETEROOMREQUEST']._serialized_end=1039
-  _globals['_LISTROOMSREQUEST']._serialized_start=1042
-  _globals['_LISTROOMSREQUEST']._serialized_end=1325
-  _globals['_LISTROOMSRESPONSE']._serialized_start=1327
-  _globals['_LISTROOMSRESPONSE']._serialized_end=1408
-  _globals['_JOINROOMREQUEST']._serialized_start=1410
-  _globals['_JOINROOMREQUEST']._serialized_end=1498
-  _globals['_LEAVEROOMREQUEST']._serialized_start=1500
-  _globals['_LEAVEROOMREQUEST']._serialized_end=1552
-  _globals['_INVITETOROOMREQUEST']._serialized_start=1554
-  _globals['_INVITETOROOMREQUEST']._serialized_end=1642
-  _globals['_KICKFROMROOMREQUEST']._serialized_start=1644
-  _globals['_KICKFROMROOMREQUEST']._serialized_end=1734
-  _globals['_ROOMMEMBER']._serialized_start=1737
-  _globals['_ROOMMEMBER']._serialized_end=1978
-  _globals['_ROOMSERVICE']._serialized_start=1981
-  _globals['_ROOMSERVICE']._serialized_end=2648
+  _globals['_ROOM']._serialized_end=634
+  _globals['_CREATEROOMREQUEST']._serialized_start=637
+  _globals['_CREATEROOMREQUEST']._serialized_end=805
+  _globals['_GETROOMREQUEST']._serialized_start=807
+  _globals['_GETROOMREQUEST']._serialized_end=840
+  _globals['_GETROOMBYCODEREQUEST']._serialized_start=842
+  _globals['_GETROOMBYCODEREQUEST']._serialized_end=883
+  _globals['_UPDATEROOMREQUEST']._serialized_start=886
+  _globals['_UPDATEROOMREQUEST']._serialized_end=1106
+  _globals['_DELETEROOMREQUEST']._serialized_start=1108
+  _globals['_DELETEROOMREQUEST']._serialized_end=1144
+  _globals['_LISTROOMSREQUEST']._serialized_start=1147
+  _globals['_LISTROOMSREQUEST']._serialized_end=1430
+  _globals['_LISTROOMSRESPONSE']._serialized_start=1432
+  _globals['_LISTROOMSRESPONSE']._serialized_end=1513
+  _globals['_JOINROOMREQUEST']._serialized_start=1515
+  _globals['_JOINROOMREQUEST']._serialized_end=1603
+  _globals['_LEAVEROOMREQUEST']._serialized_start=1605
+  _globals['_LEAVEROOMREQUEST']._serialized_end=1657
+  _globals['_INVITETOROOMREQUEST']._serialized_start=1659
+  _globals['_INVITETOROOMREQUEST']._serialized_end=1747
+  _globals['_KICKFROMROOMREQUEST']._serialized_start=1749
+  _globals['_KICKFROMROOMREQUEST']._serialized_end=1839
+  _globals['_ROOMMEMBER']._serialized_start=1842
+  _globals['_ROOMMEMBER']._serialized_end=2083
+  _globals['_ROOMSERVICE']._serialized_start=2086
+  _globals['_ROOMSERVICE']._serialized_end=2753
 # @@protoc_insertion_point(module_scope)
