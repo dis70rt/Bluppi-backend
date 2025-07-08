@@ -18,7 +18,7 @@ main() {
         echo -e "${RED}${ERROR} Authentication failed${RESET}"
         exit 1
     fi    
-    services=("Redis:redis-server" "PostgreSQL:postgresql")
+    services=("PostgreSQL:postgresql")
     
     local failed=0
     

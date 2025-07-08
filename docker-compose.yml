@@ -1,12 +1,16 @@
 services:
+
+  redis:
+    image: redis:latest
+    container_name: bluppi-redis
+    networks:
+      - cloudflared
   api:
     build: .
     container_name: bluppi-api
     command: ["uv", "run", "uvicorn", "app.server:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
     volumes:
       - ./app:/workspace/app
-    ports:
-      - "8000:8000"
     environment:
       DB_HOST: host.docker.internal
       DB_USER: ${DB_USER}
@@ -14,7 +18,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
       CHAT_DB_NAME: ${CHAT_DB_NAME}
-      REDIS_HOST: host.docker.internal
+      REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
       REDIS_DB: ${REDIS_DB}
       WS_HOST: host.docker.internal
@@ -30,8 +34,6 @@ services:
     command: ["uv", "run", "uvicorn", "chat.server:app", "--reload", "--host", "0.0.0.0", "--port", "8080"]
     volumes:
       - ./chat:/workspace/chat
-    ports:
-      - "8080:8080"
     environment:
       DB_HOST: host.docker.internal
       DB_USER: ${DB_USER}
@@ -39,7 +41,7 @@ services:
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
       CHAT_DB_NAME: ${CHAT_DB_NAME}
-      REDIS_HOST: host.docker.internal
+      REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
       REDIS_DB: ${REDIS_DB}
       WS_HOST: host.docker.internal
