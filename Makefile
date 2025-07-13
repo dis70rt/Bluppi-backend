@@ -1,6 +1,7 @@
+build:
+	sudo docker compose build
 up:
-	@./start.sh
-	sudo docker compose up -d --build
+	sudo docker compose up -d
 
 down:
 	sudo docker compose down
@@ -8,12 +9,11 @@ down:
 clean:
 	rm -rf __pycache__ .*.pid *.log
 
-status:
-	docker ps -a --format "table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Names}}"
-	@echo "Redis status:"
-	sudo systemctl status redis-server
-	@echo "PostgreSQL status:"
-	sudo systemctl status postgresql
+stats:
+	docker stats
 
 logs:
-	multitail -cS dockerhttp -s 2 -l "docker logs -f bluppi-api" -l "docker logs -f bluppi-ws1"
+	multitail -cS dockerhttp -s 3 \
+		-l "docker logs -f bluppi-api" \
+		-l "docker logs -f bluppi-ws1" \
+		-l "docker logs -f bluppi-grpc"

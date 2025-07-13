@@ -1,7 +1,23 @@
 services:
 
+  postgres:
+    image: postgres:16
+    container_name: bluppi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      CHAT_DB_NAME: ${CHAT_DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - cloudflared
+
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: bluppi-redis
     networks:
       - cloudflared
@@ -11,15 +27,15 @@ services:
     build: .
     container_name: bluppi-api
     command: [
-      "uv", "run", "uvicorn",
-      "app.server:app", "--reload",
+      ".venv/bin/uvicorn",
+      "app.server:app",
       "--host", "0.0.0.0",
       "--port", "8000"
     ]
     volumes:
       - ./app:/workspace/app
     environment:
-      DB_HOST: host.docker.internal
+      DB_HOST: postgres
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
@@ -28,11 +44,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
       REDIS_DB: ${REDIS_DB}
-      WS_HOST: host.docker.internal
+      WS_HOST: postgres
       WS_PORT: ${WS_PORT}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - cloudflared
 
@@ -40,15 +54,15 @@ services:
     build: .
     container_name: bluppi-ws1
     command: [
-      "uv", "run", "uvicorn",
-      "chat.server:app", "--reload",
+      ".venv/bin/uvicorn",
+      "chat.server:app",
       "--host", "0.0.0.0",
       "--port", "8080"
     ]
     volumes:
       - ./chat:/workspace/chat
     environment:
-      DB_HOST: host.docker.internal
+      DB_HOST: postgres
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
@@ -57,19 +71,17 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
       REDIS_DB: ${REDIS_DB}
-      WS_HOST: host.docker.internal
+      WS_HOST: postgres
       WS_PORT: ${WS_PORT}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     networks:
       - cloudflared
   grpc:
     build: .
     container_name: bluppi-grpc
-    command: ["uv", "run", "party/server.py"]
+    command: [".venv/bin/python3.12", "party/server.py"]
     environment:
       CERTS_PATH: /workspace/certs
-      DB_HOST: host.docker.internal
+      DB_HOST: postgres
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
@@ -77,10 +89,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: ${REDIS_PORT}
       REDIS_DB: ${REDIS_DB}
-      GRPC_HOST: host.docker.internal
+      GRPC_HOST: postgres
       GRPC_PORT: ${GRPC_PORT}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./party:/workspace/party
     networks:
@@ -97,6 +107,7 @@ services:
 
     restart: unless-stopped
     ports:
+      - "1883:1883"
       - "9001:9001"
     networks:
       - cloudflared
@@ -131,3 +142,6 @@ services:
 networks:
   cloudflared:
     name: cloudflared
+
+volumes:
+  pg_data:
