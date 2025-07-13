@@ -38,8 +38,6 @@ WELL_KNOWN_DIR = os.path.join(os.path.dirname(__file__), ".well-known")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log.info("Application startup: Creating HTTPX client.")
-
     client = httpx.AsyncClient(timeout=10.0)
 
     redis_client = aioredis.Redis(

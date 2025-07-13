@@ -302,3 +302,10 @@ async def recommend_next_track(
     
     await redis.set(cache_key, recommended_track.model_dump_json(), ex=3600)
     return recommended_track
+
+# @router.get("/api/v1/mood/playlist", response_model=RecommendationResponse)
+# def get_mood_playlist(
+#     params: str = Query(title="Playlist ID"),
+#     redis: aioredis.Redis = Depends(get_redis),
+#     client: httpx.AsyncClient = Depends(get_http_client),
+# ):

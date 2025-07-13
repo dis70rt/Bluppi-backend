@@ -170,3 +170,7 @@ class YTMusicService:
                 "message": f"Error getting recommendations: {str(e)}",
                 "tracks": []
             }
+    
+    def get_mood_playlist(self, params):
+        self.ytmusic.get_mood_playlists(params=params)
+        

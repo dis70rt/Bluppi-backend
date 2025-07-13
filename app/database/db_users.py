@@ -181,9 +181,9 @@ class UserDB:
                             "phone": result[6],
                             "profile_pic": result[7],
                             "favorite_genres": result[8],
-                            "follower_count": result[9],
-                            "following_count": result[10],
-                            "created_at": result[11]
+                            "follower_count": result[10],
+                            "following_count": result[11],
+                            "created_at": result[9]
                         }
                     }
                 else:

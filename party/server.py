@@ -10,11 +10,14 @@ from Service.userService import UserService
 
 from protobuf import room_pb2_grpc
 from protobuf import streaming_pb2_grpc
-from protobuf import user_pb2_grpc
+
+import os
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
 class BluppiServer:
     def __init__(self, port=50051):
-        self.port = port
+        self.port = os.getenv("GRPC_PORT", port)
         self.server = None
         
     def start(self):

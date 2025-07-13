@@ -7,3 +7,8 @@ __pycache__/
 /database/musicbrainz
 /db-init/init.sql
 /chat/services
+/certs/origin.crt
+/certs/origin.key
+/certs/origin.csr
+mosquitto/config/passwd
+mosquitto/logs/mosquitto.log

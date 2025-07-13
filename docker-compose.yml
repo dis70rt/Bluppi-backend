@@ -10,7 +10,12 @@ services:
   api:
     build: .
     container_name: bluppi-api
-    command: ["uv", "run", "uvicorn", "app.server:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+    command: [
+      "uv", "run", "uvicorn",
+      "app.server:app", "--reload",
+      "--host", "0.0.0.0",
+      "--port", "8000"
+    ]
     volumes:
       - ./app:/workspace/app
     environment:
@@ -25,6 +30,7 @@ services:
       REDIS_DB: ${REDIS_DB}
       WS_HOST: host.docker.internal
       WS_PORT: ${WS_PORT}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -33,7 +39,12 @@ services:
   ws1:
     build: .
     container_name: bluppi-ws1
-    command: ["uv", "run", "uvicorn", "chat.server:app", "--reload", "--host", "0.0.0.0", "--port", "8080"]
+    command: [
+      "uv", "run", "uvicorn",
+      "chat.server:app", "--reload",
+      "--host", "0.0.0.0",
+      "--port", "8080"
+    ]
     volumes:
       - ./chat:/workspace/chat
     environment:
@@ -52,7 +63,43 @@ services:
       - "host.docker.internal:host-gateway"
     networks:
       - cloudflared
+  grpc:
+    build: .
+    container_name: bluppi-grpc
+    command: ["uv", "run", "party/server.py"]
+    environment:
+      CERTS_PATH: /workspace/certs
+      DB_HOST: host.docker.internal
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_DB: ${REDIS_DB}
+      GRPC_HOST: host.docker.internal
+      GRPC_PORT: ${GRPC_PORT}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./party:/workspace/party
+    networks:
+      - cloudflared
 
+  mqtt:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/config/passwd:/mosquitto/config/passwd:ro
+      - ./mosquitto/logs:/mosquitto/logs
+      - ./mosquitto/data:/mosquitto/data
+
+    restart: unless-stopped
+    ports:
+      - "9001:9001"
+    networks:
+      - cloudflared
 
   tunnel:
     container_name: bluppi-tunnel
@@ -64,8 +111,22 @@ services:
     depends_on:
       - api
       - ws1
+      - mqtt
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+  
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: bluppi-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./certs:/etc/nginx/certs
+    ports:
+      - "443:443"
+    networks:
+      - cloudflared
+    depends_on:
+      - grpc
 
 networks:
   cloudflared:

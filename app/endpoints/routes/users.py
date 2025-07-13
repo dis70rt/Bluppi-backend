@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Path, status, Query
 
 from pydantic import BaseModel
-from app.database.db_users import UserCreate, UserDB, UserResponse, UserUpdate
+from app.database.db_users import UserCreate, UserDB, UserUpdate
 from app.utils.uuid_helper import str_to_uuid
+from app.utils.weather_mood import generate_playlist_mood_heading
 
 router = APIRouter(tags=["Users"])
 
@@ -180,3 +181,21 @@ async def get_recent_searches(
             detail=result["message"]
         )
     return {"searches": result["searches"]}
+
+@router.post("/api/v1/playlist/generate", status_code=status.HTTP_201_CREATED, operation_id="generate_playlist_heading")
+async def generate_playlist_heading(
+    latitude: float = Query(None),
+    longitude: float = Query(None),
+    time_iso: str = Query(None)
+):
+    try:
+        result = generate_playlist_mood_heading(latitude, longitude, time_iso)
+        return {
+            "status": "success",
+            "data": result
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate playlist heading: {str(e)}"
+        )
