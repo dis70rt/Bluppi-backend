@@ -6,7 +6,6 @@ from concurrent import futures
 
 from Service.roomService import RoomService
 from Service.syncService import SyncService
-from Service.userService import UserService
 
 from protobuf import room_pb2_grpc
 from protobuf import streaming_pb2_grpc
@@ -38,9 +37,18 @@ class BluppiServer:
         room_pb2_grpc.add_RoomServiceServicer_to_server(RoomService(), self.server)
         streaming_pb2_grpc.add_SyncServiceServicer_to_server(SyncService(), self.server)
         # user_pb2_grpc.add_UserServiceServicer_to_server(UserService(user), self.server)
+
+        certs_path = os.getenv("CERTS_PATH", "/certs")
+        with open(os.path.join(certs_path, "server.crt"), "rb") as f:
+            cert = f.read()
+        with open(os.path.join(certs_path, "server.key"), "rb") as f:
+            key = f.read()
+
+        credentials = grpc.ssl_server_credentials([(key, cert)])
         
         listen_addr = f'[::]:{self.port}'
-        self.server.add_insecure_port(listen_addr)
+        # self.server.add_insecure_port(listen_addr)
+        self.server.add_secure_port(listen_addr, credentials)
         
         logging.info(f"Starting Bluppi server on {listen_addr}")
         logging.info("Services available:")
