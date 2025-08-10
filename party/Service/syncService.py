@@ -28,6 +28,10 @@ class SyncService(streaming_pb2_grpc.SyncService):
                 room_id = None
                 if request.HasField('track_command'):
                     room_id = request.track_command.room_id
+                    track_id = request.track_command.track.track_id
+                    
+                    self.room_manager.update_current_track_id(track_id, room_id)
+
                 elif request.HasField('position_update'):
                     room_id = request.position_update.room_id
                 elif request.HasField('control_command'):

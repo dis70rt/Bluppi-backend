@@ -4,6 +4,7 @@ import logging
 from protobuf import room_pb2
 from protobuf import room_pb2_grpc
 from protobuf import common_pb2
+from protobuf import track_pb2
 from google.protobuf import empty_pb2 as google_pb2
 
 from Manager.roomManager import RoomManager
@@ -76,6 +77,9 @@ class RoomService(room_pb2_grpc.RoomServiceServicer):
             
             response = room_pb2.ListRoomsResponse()
             for room_data in rooms:
+                trackId = room_data['current_track_id']
+                track = self.room_manager.get_track_by_id(track_id=trackId)
+
                 room = response.rooms.add()
                 room.id = room_data['id']
                 room.name = room_data['name']
@@ -85,6 +89,17 @@ class RoomService(room_pb2_grpc.RoomServiceServicer):
                 room.visibility = common_pb2.PUBLIC if room_data['visibility'] == 'PUBLIC' else common_pb2.PRIVATE
                 room.invite_only = False
                 room.status = common_pb2.ACTIVE
+                if track:
+                    room.current_track.CopyFrom(
+                        track_pb2.Track(
+                        track_id=str(track[0]),
+                        title=track[1],
+                        artist=track[2],
+                        audio_url=None,
+                        duration_ms=track[4],
+                        image_url=track[6],
+                        )
+                    )
             
             return response
             

@@ -15,7 +15,11 @@ message SyncReply {
 
 // Host Playback
 message HostTrackCommand {
-  
+  string room_id = 1;
+  Track track = 2;
+  int64 start_at_server_ms = 3;
+  int64 start_position = 4;
+  string host_user_id = 6;
 }
 
 message HostPositionUpdate {

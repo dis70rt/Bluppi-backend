@@ -1,5 +1,6 @@
 from .bluppi import BluppiDB
 from .redisManager import RedisManager
+from .broker_queue import queue
 import uuid
 import time
 import hashlib
@@ -297,7 +298,7 @@ class RoomManager():
             with BluppiDB() as db:
                 query = f"""
                 SELECT r.id, r.name, r.description, r.room_code, r.host_user_id, 
-                    r.visibility, r.created_at, r.updated_at, r.status
+                    r.visibility, r.created_at, r.updated_at, r.status, r.current_track_id
                 FROM {self.table_name} r
                 WHERE r.status = 'ACTIVE'
                 """
@@ -328,7 +329,8 @@ class RoomManager():
                         'visibility': room[5],
                         'created_at': room[6],
                         'updated_at': room[7],
-                        'status': room[8]
+                        'status': room[8],
+                        'current_track_id': room[9]
                     }
                     result.append(room_dict)
                     
@@ -475,3 +477,54 @@ class RoomManager():
         except Exception as e:
             logging.error(f"Error fetching room code: {e}")
             return None
+        
+    def get_track_by_id(self, track_id: uuid.UUID):
+        try:
+            if not track_id:
+                return None
+
+            # trackId = uuid.UUID(track_id)
+            with BluppiDB() as db:
+                db.cursor.execute(
+                    """
+                    SELECT * FROM tracks
+                    WHERE id = %s
+                    """,
+                    (track_id,)
+                )
+                result = db.cursor.fetchone()
+                return result if result else None
+        except Exception as e:
+            logging.error(f"Error fetching Track data: {e}")
+            return None
+    
+    def check_track_id(self, track_id:uuid.UUID, max_attempts=5, delay=0.25):
+        with BluppiDB() as db:
+            for attempt in range(max_attempts):
+                db.cursor.execute("SELECT 1 FROM tracks WHERE id = %s", (track_id,))
+                if db.cursor.fetchone():
+                    return True;
+                
+
+    @queue.task(bind=True, max_retries=5, default_retry_delay=2)
+    def update_current_track_id(self, track_id: uuid.UUID, room_id: str):
+        try:
+            with BluppiDB() as db:
+                db.cursor.execute("SELECT 1 FROM tracks WHERE id = %s", (track_id,))
+                if not db.cursor.fetchone():
+                    raise self.retry(exc=RuntimeError("TrackNotFound"))
+
+                db.cursor.execute(
+                    f" UPDATE rooms SET current_track_id = %sWHERE id = %s",
+                    (track_id, room_id,)
+                )
+
+                db.connection.commit()
+                
+        except self.MaxRetriesExceededError:
+            logging.error(f"Max retries exceeded for track {track_id}")
+            return False
+        
+        except Exception as e:
+            logging.error(f"Error updating room: {e}")
+            return False
