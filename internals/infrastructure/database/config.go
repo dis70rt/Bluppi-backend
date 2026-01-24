@@ -1,6 +1,11 @@
 package database
 
-import "time"
+import (
+	"log"
+	"time"
+
+	"github.com/joho/godotenv"
+)
 
 type Config struct {
 	Host     string
@@ -17,12 +22,16 @@ type Config struct {
 }
 
 func LoadConfig() Config {
+	if err := godotenv.Load(); err != nil {
+		log.Println("ℹ️  No .env file found, relying on System Env Vars")
+	}
+
 	return Config{
 		Host:     mustEnv("DB_HOST", "localhost"),
 		Port:     mustInt("DB_PORT", 5432),
-		User:     mustEnv("DB_USER", ""),
-		Password: mustEnv("DB_PASSWORD", ""),
-		Name:     mustEnv("DB_NAME", ""),
+		User:     mustEnv("DB_USER", "postgres"),
+		Password: mustEnv("DB_PASSWORD", "password"),
+		Name:     mustEnv("DB_NAME", "bluppi_db"),
 		SSLMode:  mustEnv("DB_SSLMODE", "disable"),
 
 		MaxConns:        int32(mustInt("DB_MAX_CONNS", 10)),

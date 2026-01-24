@@ -7,7 +7,7 @@ import (
 
 	// "github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	pq "github.com/lib/pq"
 )
 
 type Repository struct {
@@ -23,16 +23,26 @@ func NewRepository(db *sqlx.DB) *Repository {
 func (r *Repository) CreateUser(ctx context.Context, u *User) error {
 	query := `
 		INSERT INTO users (
-			id, username, email, name, bio,
+			id, email, username, name, bio,
 			country, phone, profile_pic, favorite_genres
 		)
-		VALUES (
-			:id, :username, :email, :name, :bio,
-			:country, :phone, :profile_pic, :favorite_genres
-		)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
 	`
 
-	_, err := r.db.NamedExecContext(ctx, query, u)
+	_, err := r.db.ExecContext(
+		ctx,
+		query,
+		u.ID,
+		u.Email,
+		u.Username,
+		u.Name,
+		u.Bio,
+		u.Country,
+		u.Phone,
+		u.ProfilePic,
+		pq.Array(u.FavoriteGenres),
+	)
+
 	return err
 }
 
@@ -85,14 +95,14 @@ func (r *Repository) UpdateUser(ctx context.Context, id string, fields map[strin
 			favorite_genres = COALESCE(:favorite_genres, favorite_genres)
 		WHERE id = :id
 	`, map[string]any{
-		"id": id,
-		"username": fields["username"],
-		"email": fields["email"],
-		"name": fields["name"],
-		"bio": fields["bio"],
-		"country": fields["country"],
-		"phone": fields["phone"],
-		"profile_pic": fields["profile_pic"],
+		"id":              id,
+		"username":        fields["username"],
+		"email":           fields["email"],
+		"name":            fields["name"],
+		"bio":             fields["bio"],
+		"country":         fields["country"],
+		"phone":           fields["phone"],
+		"profile_pic":     fields["profile_pic"],
 		"favorite_genres": fields["favorite_genres"],
 	})
 
@@ -223,10 +233,10 @@ func (r *Repository) Unfollow(ctx context.Context, followerID, followeeID string
 // ----------------- Recent Searches Operations -----------------
 
 type UserStats struct {
-	LikedTracks     int `db:"liked_tracks"`
-	TotalPlays      int `db:"total_plays"`
-	FollowingCount  int `db:"following_count"`
-	FollowersCount  int `db:"followers_count"`
+	LikedTracks    int `db:"liked_tracks"`
+	TotalPlays     int `db:"total_plays"`
+	FollowingCount int `db:"following_count"`
+	FollowersCount int `db:"followers_count"`
 }
 
 func (r *Repository) GetUserStats(ctx context.Context, userID string) (*UserStats, error) {
@@ -247,7 +257,6 @@ func (r *Repository) GetUserStats(ctx context.Context, userID string) (*UserStat
 
 	return &stats, err
 }
-
 
 func (r *Repository) AddRecentSearch(ctx context.Context, userID, query string) error {
 	_, err := r.db.ExecContext(

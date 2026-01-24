@@ -18,10 +18,11 @@ func mustEnv(key string, def string) string {
 }
 
 func mustInt(key string, def int) int {
-	v := mustEnv(key, "")
+	v := os.Getenv(key)
 	if v == "" {
 		return def
 	}
+
 	i, err := strconv.Atoi(v)
 	if err != nil {
 		panic(fmt.Sprintf("invalid int for %s: %v", key, err))
@@ -30,10 +31,11 @@ func mustInt(key string, def int) int {
 }
 
 func mustDuration(key string, def time.Duration) time.Duration {
-	v := mustEnv(key, "")
+	v := os.Getenv(key)
 	if v == "" {
 		return def
-	}
+    }
+
 	d, err := time.ParseDuration(v)
 	if err != nil {
 		panic(fmt.Sprintf("invalid duration for %s: %v", key, err))
