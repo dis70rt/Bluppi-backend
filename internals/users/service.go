@@ -12,6 +12,7 @@ var (
 	ErrInvalidInput       = errors.New("invalid input")
 	ErrAlreadyFollowing   = errors.New("already following user")
 	ErrNotFollowing       = errors.New("not following user")
+	ErrUserExists       = errors.New("user already exists")
 )
 
 type Service struct {
@@ -185,4 +186,59 @@ func (s *Service) GetRecentSearches(
 	}
 
 	return s.repo.GetRecentSearches(ctx, userID, limit)
+}
+
+func (s *Service) LikeTrack(ctx context.Context, userID, trackID string) error {
+    if userID == "" || trackID == "" {
+        return ErrInvalidInput
+    }
+    return s.repo.LikeTrack(ctx, userID, trackID)
+}
+
+func (s *Service) UnlikeTrack(ctx context.Context, userID, trackID string) error {
+    if userID == "" || trackID == "" {
+        return ErrInvalidInput
+    }
+    err := s.repo.UnlikeTrack(ctx, userID, trackID)
+    if errors.Is(err, sql.ErrNoRows) {
+        return ErrNotFollowing // or create ErrTrackNotLiked
+    }
+    return err
+}
+
+func (s *Service) GetLikedTracks(ctx context.Context, userID string, limit, offset int) ([]string, int, error) {
+    if userID == "" {
+        return nil, 0, ErrInvalidInput
+    }
+    if limit <= 0 || limit > 100 {
+        limit = 20
+    }
+    return s.repo.GetLikedTracks(ctx, userID, limit, offset)
+}
+
+func (s *Service) GetFollowers(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+    if userID == "" {
+        return nil, 0, ErrInvalidInput
+    }
+    if limit <= 0 || limit > 100 {
+        limit = 20
+    }
+    return s.repo.GetFollowers(ctx, userID, limit, offset)
+}
+
+func (s *Service) GetFollowing(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+    if userID == "" {
+        return nil, 0, ErrInvalidInput
+    }
+    if limit <= 0 || limit > 100 {
+        limit = 20
+    }
+    return s.repo.GetFollowing(ctx, userID, limit, offset)
+}
+
+func (s *Service) IsFollowing(ctx context.Context, followerID, followeeID string) (bool, error) {
+    if followerID == "" || followeeID == "" {
+        return false, ErrInvalidInput
+    }
+    return s.repo.IsFollowing(ctx, followerID, followeeID)
 }

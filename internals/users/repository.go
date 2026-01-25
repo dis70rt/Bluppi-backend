@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	// "github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -288,4 +289,161 @@ func (r *Repository) GetRecentSearches(
 	)
 
 	return searches, err
+}
+
+func (r *Repository) DeleteRecentSearch(ctx context.Context, userID string, searchID string) error {
+    res, err := r.db.ExecContext(
+        ctx,
+        `DELETE FROM recent_searches WHERE user_id = $1 AND id = $2`,
+        userID, searchID,
+    )
+    if err != nil {
+        return err
+    }
+    if rows, _ := res.RowsAffected(); rows == 0 {
+        return sql.ErrNoRows
+    }
+    return nil
+}
+
+// ----------------- Track Interactions -----------------
+
+func (r *Repository) LikeTrack(ctx context.Context, userID, trackID string) error {
+    _, err := r.db.ExecContext(
+        ctx,
+        `
+        INSERT INTO user_track (user_id, track_id, interaction_type)
+        VALUES ($1, $2, 'liked')
+        ON CONFLICT DO NOTHING
+        `,
+        userID, trackID,
+    )
+    return err
+}
+
+func (r *Repository) UnlikeTrack(ctx context.Context, userID, trackID string) error {
+    res, err := r.db.ExecContext(
+        ctx,
+        `DELETE FROM user_track WHERE user_id = $1 AND track_id = $2 AND interaction_type = 'liked'`,
+        userID, trackID,
+    )
+    if err != nil {
+        return err
+    }
+    if rows, _ := res.RowsAffected(); rows == 0 {
+        return sql.ErrNoRows
+    }
+    return nil
+}
+
+func (r *Repository) GetLikedTracks(ctx context.Context, userID string, limit, offset int) ([]string, int, error) {
+    trackIDs := []string{}
+
+    err := r.db.SelectContext(
+        ctx,
+        &trackIDs,
+        `
+        SELECT track_id FROM user_track
+        WHERE user_id = $1 AND interaction_type = 'liked'
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+        `,
+        userID, limit, offset,
+    )
+    if err != nil {
+        return nil, 0, err
+    }
+
+    var total int
+    err = r.db.GetContext(
+        ctx,
+        &total,
+        `SELECT COUNT(*) FROM user_track WHERE user_id = $1 AND interaction_type = 'liked'`,
+        userID,
+    )
+
+    return trackIDs, total, err
+}
+
+// ----------------- Follow List Operations -----------------
+
+type FollowEntry struct {
+    ID         string     `db:"id"`
+    Username   string     `db:"username"`
+    Name       string     `db:"name"`
+    ProfilePic *string    `db:"profile_pic"`
+    FollowedAt time.Time  `db:"followed_at"`
+}
+
+func (r *Repository) GetFollowers(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+    followers := []FollowEntry{}
+
+    err := r.db.SelectContext(
+        ctx,
+        &followers,
+        `
+        SELECT u.id, u.username, u.name, u.profile_pic, f.created_at AS followed_at
+        FROM follows f
+        JOIN users u ON f.follower_id = u.id
+        WHERE f.followee_id = $1
+        ORDER BY f.created_at DESC
+        LIMIT $2 OFFSET $3
+        `,
+        userID, limit, offset,
+    )
+    if err != nil {
+        return nil, 0, err
+    }
+
+    var total int
+    err = r.db.GetContext(
+        ctx,
+        &total,
+        `SELECT COUNT(*) FROM follows WHERE followee_id = $1`,
+        userID,
+    )
+
+    return followers, total, err
+}
+
+func (r *Repository) GetFollowing(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+    following := []FollowEntry{}
+
+    err := r.db.SelectContext(
+        ctx,
+        &following,
+        `
+        SELECT u.id, u.username, u.name, u.profile_pic, f.created_at AS followed_at
+        FROM follows f
+        JOIN users u ON f.followee_id = u.id
+        WHERE f.follower_id = $1
+        ORDER BY f.created_at DESC
+        LIMIT $2 OFFSET $3
+        `,
+        userID, limit, offset,
+    )
+    if err != nil {
+        return nil, 0, err
+    }
+
+    var total int
+    err = r.db.GetContext(
+        ctx,
+        &total,
+        `SELECT COUNT(*) FROM follows WHERE follower_id = $1`,
+        userID,
+    )
+
+    return following, total, err
+}
+
+func (r *Repository) IsFollowing(ctx context.Context, followerID, followeeID string) (bool, error) {
+    var exists bool
+    err := r.db.GetContext(
+        ctx,
+        &exists,
+        `SELECT EXISTS (SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2)`,
+        followerID, followeeID,
+    )
+    return exists, err
 }
