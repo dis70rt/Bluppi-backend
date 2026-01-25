@@ -4,47 +4,46 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	// "github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	pq "github.com/lib/pq"
+	// pq "github.com/lib/pq"
 )
 
+type Querier interface {
+    sqlx.QueryerContext
+    sqlx.ExecerContext
+    GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+    SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+	Rebind(query string) string
+	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+}
+
 type Repository struct {
-	db *sqlx.DB
+	db Querier
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{db: db}
 }
 
+func NewRepositoryWithTx(tx *sqlx.Tx) *Repository {
+    return &Repository{db: tx}
+}
+
 // ----------------- Core CRUD Operations -----------------
 
 func (r *Repository) CreateUser(ctx context.Context, u *User) error {
-	query := `
-		INSERT INTO users (
-			id, email, username, name, bio,
-			country, phone, profile_pic, favorite_genres
-		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-	`
-
-	_, err := r.db.ExecContext(
-		ctx,
-		query,
-		u.ID,
-		u.Email,
-		u.Username,
-		u.Name,
-		u.Bio,
-		u.Country,
-		u.Phone,
-		u.ProfilePic,
-		pq.Array(u.FavoriteGenres),
-	)
-
-	return err
+    query := `
+        INSERT INTO users (id, email, username, name, bio, country, phone, profile_pic, favorite_genres)
+        VALUES (:id, :email, :username, :name, :bio, :country, :phone, :profile_pic, :favorite_genres)
+    `
+    
+    _, err := r.db.NamedExecContext(ctx, query, u)
+    return err
 }
 
 func (r *Repository) GetUserByID(ctx context.Context, id string) (*User, error) {
@@ -80,40 +79,37 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*U
 }
 
 func (r *Repository) UpdateUser(ctx context.Context, id string, fields map[string]any) error {
-	if len(fields) == 0 {
-		return errors.New("no fields to update")
-	}
+    if len(fields) == 0 {
+        return errors.New("no fields to update")
+    }
 
-	query, args, err := sqlx.Named(`
-		UPDATE users SET
-			username = COALESCE(:username, username),
-			email = COALESCE(:email, email),
-			name = COALESCE(:name, name),
-			bio = COALESCE(:bio, bio),
-			country = COALESCE(:country, country),
-			phone = COALESCE(:phone, phone),
-			profile_pic = COALESCE(:profile_pic, profile_pic),
-			favorite_genres = COALESCE(:favorite_genres, favorite_genres)
-		WHERE id = :id
-	`, map[string]any{
-		"id":              id,
-		"username":        fields["username"],
-		"email":           fields["email"],
-		"name":            fields["name"],
-		"bio":             fields["bio"],
-		"country":         fields["country"],
-		"phone":           fields["phone"],
-		"profile_pic":     fields["profile_pic"],
-		"favorite_genres": fields["favorite_genres"],
-	})
+    var setClauses []string
+    var args []interface{}
+    i := 1
 
-	if err != nil {
-		return err
-	}
+    for key, value := range fields {
+        setClauses = append(setClauses, fmt.Sprintf("%s = $%d", key, i))
+        args = append(args, value)
+        i++
+    }
 
-	query = r.db.Rebind(query)
-	_, err = r.db.ExecContext(ctx, query, args...)
-	return err
+    args = append(args, id)
+    query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", strings.Join(setClauses, ", "), i)
+
+    res, err := r.db.ExecContext(ctx, query, args...)
+    if err != nil {
+        return err
+    }
+
+    rows, err := res.RowsAffected()
+    if err != nil {
+        return err
+    }
+    if rows == 0 {
+        return ErrUserNotFound
+    }
+
+    return nil
 }
 
 func (r *Repository) DeleteUser(ctx context.Context, id string) error {
@@ -345,7 +341,7 @@ func (r *Repository) GetLikedTracks(ctx context.Context, userID string, limit, o
         `
         SELECT track_id FROM user_track
         WHERE user_id = $1 AND interaction_type = 'liked'
-        ORDER BY created_at DESC
+        ORDER BY interacted_at DESC
         LIMIT $2 OFFSET $3
         `,
         userID, limit, offset,

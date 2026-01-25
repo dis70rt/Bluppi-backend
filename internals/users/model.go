@@ -1,6 +1,9 @@
 package users
 
-import "time"
+import (
+	"time"
+	"github.com/lib/pq"
+)
 
 type User struct {
 	ID             string    `db:"id"`
@@ -11,7 +14,7 @@ type User struct {
 	Country        *string   `db:"country"`
 	Phone          *string   `db:"phone"`
 	ProfilePic     *string   `db:"profile_pic"`
-	FavoriteGenres []string  `db:"favorite_genres"`
+	FavoriteGenres pq.StringArray `db:"favorite_genres"`
 	FollowerCount  int       `db:"follower_count"`
 	FollowingCount int       `db:"following_count"`
 	CreatedAt      time.Time `db:"created_at"`
