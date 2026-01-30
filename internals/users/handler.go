@@ -151,42 +151,6 @@ func (h *GrpcHandler) CheckEmail(ctx context.Context, req *pb.CheckEmailRequest)
     }, nil
 }
 
-func (h *GrpcHandler) LikeTrack(ctx context.Context, req *pb.LikeTrackRequest) (*pb.StatusResponse, error) {
-    err := h.service.LikeTrack(ctx, req.UserId, req.TrackId)
-    if err != nil {
-        return nil, h.mapError(err)
-    }
-
-    return &pb.StatusResponse{
-        Message: "track liked",
-        Success: true,
-    }, nil
-}
-
-func (h *GrpcHandler) UnlikeTrack(ctx context.Context, req *pb.UnlikeTrackRequest) (*pb.StatusResponse, error) {
-    err := h.service.UnlikeTrack(ctx, req.UserId, req.TrackId)
-    if err != nil {
-        return nil, h.mapError(err)
-    }
-
-    return &pb.StatusResponse{
-        Message: "track unliked",
-        Success: true,
-    }, nil
-}
-
-func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracksRequest) (*pb.GetLikedTracksResponse, error) {
-    trackIDs, total, err := h.service.GetLikedTracks(ctx, req.UserId, int(req.Limit), int(req.Offset))
-    if err != nil {
-        return nil, h.mapError(err)
-    }
-
-    return &pb.GetLikedTracksResponse{
-        TrackIds: trackIDs,
-        Total:    int64(total),
-    }, nil
-}
-
 func (h *GrpcHandler) GetUserStats(ctx context.Context, req *pb.GetUserStatsRequest) (*pb.UserStatsResponse, error) {
     stats, err := h.service.GetUserStats(ctx, req.UserId)
     if err != nil {

@@ -1,0 +1,231 @@
+syntax = "proto3";
+
+package tracks;
+
+option go_package = "./internals/gen";
+
+import "google/protobuf/timestamp.proto";
+
+service TrackService {
+  // --- Core Track CRUD ---
+  rpc CreateTrack (CreateTrackRequest) returns (TrackResponse);
+  rpc GetTrack (GetTrackRequest) returns (TrackResponse);
+  rpc UpdateTrack (UpdateTrackRequest) returns (TrackResponse);
+  rpc DeleteTrack (DeleteTrackRequest) returns (DeleteTrackResponse);
+
+  // --- Search & Discovery ---
+  rpc SearchTracks (SearchTracksRequest) returns (SearchTracksResponse);
+  rpc GetPopularTracks (GetPopularTracksRequest) returns (GetTracksResponse);
+  rpc GetTracksByGenre (GetTracksByGenreRequest) returns (GetTracksResponse);
+
+  // --- User Track Interactions ---
+  rpc LikeTrack (LikeTrackRequest) returns (StatusResponse);
+  rpc UnlikeTrack (UnlikeTrackRequest) returns (StatusResponse);
+  rpc GetLikedTracks (GetLikedTracksRequest) returns (GetLikedTracksResponse);
+  rpc IsTrackLiked (IsTrackLikedRequest) returns (IsTrackLikedResponse);
+
+  // --- Track History ---
+  rpc AddTrackToHistory (AddTrackToHistoryRequest) returns (StatusResponse);
+  rpc GetTrackHistory (GetTrackHistoryRequest) returns (GetTrackHistoryResponse);
+  rpc ClearTrackHistory (ClearTrackHistoryRequest) returns (StatusResponse);
+
+  // --- Recommendations ---
+  rpc GetRecommendations (GetRecommendationsRequest) returns (GetRecommendationsResponse);
+}
+
+// =========================================
+// Core Messages
+// =========================================
+
+message Track {
+  string id = 1;
+  string title = 2;
+  string artist = 3;
+  string album = 4;
+  int32 duration = 5;
+  repeated string genres = 6;
+  string image_url = 7;
+  string preview_url = 8;
+  string video_id = 9;
+  int64 listeners = 10;
+  int64 play_count = 11;
+  int32 popularity = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message TrackSummary {
+  string id = 1;
+  string title = 2;
+  string artist = 3;
+  string album = 4;
+  string image_url = 5;
+  int32 duration = 6;
+}
+
+// --- CRUD ---
+
+message CreateTrackRequest {
+  string id = 1;  // UUID from external source (e.g., YTMusic)
+  string title = 2;
+  string artist = 3;
+  string album = 4;
+  int32 duration = 5;
+  repeated string genres = 6;
+  string image_url = 7;
+  string preview_url = 8;
+  string video_id = 9;
+  int64 listeners = 10;
+  int64 play_count = 11;
+  int32 popularity = 12;
+}
+
+message TrackResponse {
+  Track track = 1;
+}
+
+message GetTrackRequest {
+  string track_id = 1;
+}
+
+message UpdateTrackRequest {
+  string track_id = 1;
+  optional string title = 2;
+  optional string artist = 3;
+  optional string album = 4;
+  optional int32 duration = 5;
+  repeated string genres = 6;
+  optional string image_url = 7;
+  optional string preview_url = 8;
+  optional string video_id = 9;
+  optional int64 listeners = 10;
+  optional int64 play_count = 11;
+  optional int32 popularity = 12;
+}
+
+message DeleteTrackRequest {
+  string track_id = 1;
+}
+
+message DeleteTrackResponse {
+  string message = 1;
+}
+
+// --- Search & Discovery ---
+
+message SearchTracksRequest {
+  string query = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message SearchTracksResponse {
+  repeated Track tracks = 1;
+  int64 total = 2;
+  string query = 3;
+  int32 limit = 4;
+  int32 offset = 5;
+}
+
+message GetPopularTracksRequest {
+  int32 limit = 1;
+}
+
+message GetTracksByGenreRequest {
+  string genre = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetTracksResponse {
+  repeated Track tracks = 1;
+  int64 total = 2;
+}
+
+// --- User Interactions ---
+
+message LikeTrackRequest {
+  string user_id = 1;
+  string track_id = 2;
+}
+
+message UnlikeTrackRequest {
+  string user_id = 1;
+  string track_id = 2;
+}
+
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetLikedTracksRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message LikedTrackEntry {
+  string track_id = 1;
+  string title = 2;
+  string artist = 3;
+  string album = 4;
+  string image_url = 5;
+  google.protobuf.Timestamp liked_at = 6;
+}
+
+message GetLikedTracksResponse {
+  repeated LikedTrackEntry tracks = 1;
+  int64 total = 2;
+}
+
+message IsTrackLikedRequest {
+  string user_id = 1;
+  string track_id = 2;
+}
+
+message IsTrackLikedResponse {
+  bool is_liked = 1;
+}
+
+// --- Track History ---
+
+message AddTrackToHistoryRequest {
+  string user_id = 1;
+  string track_id = 2;
+}
+
+message GetTrackHistoryRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message HistoryTrackEntry {
+  string track_id = 1;
+  string title = 2;
+  string artist = 3;
+  string album = 4;
+  string image_url = 5;
+  google.protobuf.Timestamp played_at = 6;
+}
+
+message GetTrackHistoryResponse {
+  repeated HistoryTrackEntry history = 1;
+  int64 total = 2;
+}
+
+message ClearTrackHistoryRequest {
+  string user_id = 1;
+}
+
+// --- Recommendations ---
+
+message GetRecommendationsRequest {
+  string video_id = 1;
+  int32 limit = 2;
+}
+
+message GetRecommendationsResponse {
+  repeated Track tracks = 1;
+}

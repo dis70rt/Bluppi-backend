@@ -19,11 +19,6 @@ service UserService {
   rpc CheckUsername (CheckUsernameRequest) returns (CheckExistenceResponse);
   rpc CheckEmail (CheckEmailRequest) returns (CheckExistenceResponse);
 
-  // --- Likes (Track Interactions) ---
-  rpc LikeTrack (LikeTrackRequest) returns (StatusResponse);
-  rpc UnlikeTrack (UnlikeTrackRequest) returns (StatusResponse);
-  rpc GetLikedTracks (GetLikedTracksRequest) returns (GetLikedTracksResponse);
-
   // --- Stats & History ---
   rpc GetUserStats (GetUserStatsRequest) returns (UserStatsResponse);
   rpc AddRecentSearch (AddRecentSearchRequest) returns (StatusResponse);
@@ -128,34 +123,9 @@ message CheckExistenceResponse {
   bool exists = 1;
 }
 
-// --- Likes ---
-
-message LikeTrackRequest {
-  string user_id = 1;
-  string track_id = 2;
-}
-
-message UnlikeTrackRequest {
-  string user_id = 1;
-  string track_id = 2;
-}
-
 message StatusResponse {
   string message = 1;
   bool success = 2;
-}
-
-message GetLikedTracksRequest {
-  string user_id = 1;
-  int32 limit = 2;
-  int32 offset = 3;
-}
-
-message GetLikedTracksResponse {
-  // Assuming a Track ID list or simple objects. 
-  // If you need full track details, you'd import a track.proto or return IDs
-  repeated string track_ids = 1; 
-  int64 total = 2;
 }
 
 // --- Stats & History ---

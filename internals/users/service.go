@@ -188,34 +188,6 @@ func (s *Service) GetRecentSearches(
 	return s.repo.GetRecentSearches(ctx, userID, limit)
 }
 
-func (s *Service) LikeTrack(ctx context.Context, userID, trackID string) error {
-    if userID == "" || trackID == "" {
-        return ErrInvalidInput
-    }
-    return s.repo.LikeTrack(ctx, userID, trackID)
-}
-
-func (s *Service) UnlikeTrack(ctx context.Context, userID, trackID string) error {
-    if userID == "" || trackID == "" {
-        return ErrInvalidInput
-    }
-    err := s.repo.UnlikeTrack(ctx, userID, trackID)
-    if errors.Is(err, sql.ErrNoRows) {
-        return ErrNotFollowing // or create ErrTrackNotLiked
-    }
-    return err
-}
-
-func (s *Service) GetLikedTracks(ctx context.Context, userID string, limit, offset int) ([]string, int, error) {
-    if userID == "" {
-        return nil, 0, ErrInvalidInput
-    }
-    if limit <= 0 || limit > 100 {
-        limit = 20
-    }
-    return s.repo.GetLikedTracks(ctx, userID, limit, offset)
-}
-
 func (s *Service) GetFollowers(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
     if userID == "" {
         return nil, 0, ErrInvalidInput

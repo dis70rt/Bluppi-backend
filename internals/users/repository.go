@@ -302,65 +302,6 @@ func (r *Repository) DeleteRecentSearch(ctx context.Context, userID string, sear
     return nil
 }
 
-// ----------------- Track Interactions -----------------
-
-func (r *Repository) LikeTrack(ctx context.Context, userID, trackID string) error {
-    _, err := r.db.ExecContext(
-        ctx,
-        `
-        INSERT INTO user_track (user_id, track_id, interaction_type)
-        VALUES ($1, $2, 'liked')
-        ON CONFLICT DO NOTHING
-        `,
-        userID, trackID,
-    )
-    return err
-}
-
-func (r *Repository) UnlikeTrack(ctx context.Context, userID, trackID string) error {
-    res, err := r.db.ExecContext(
-        ctx,
-        `DELETE FROM user_track WHERE user_id = $1 AND track_id = $2 AND interaction_type = 'liked'`,
-        userID, trackID,
-    )
-    if err != nil {
-        return err
-    }
-    if rows, _ := res.RowsAffected(); rows == 0 {
-        return sql.ErrNoRows
-    }
-    return nil
-}
-
-func (r *Repository) GetLikedTracks(ctx context.Context, userID string, limit, offset int) ([]string, int, error) {
-    trackIDs := []string{}
-
-    err := r.db.SelectContext(
-        ctx,
-        &trackIDs,
-        `
-        SELECT track_id FROM user_track
-        WHERE user_id = $1 AND interaction_type = 'liked'
-        ORDER BY interacted_at DESC
-        LIMIT $2 OFFSET $3
-        `,
-        userID, limit, offset,
-    )
-    if err != nil {
-        return nil, 0, err
-    }
-
-    var total int
-    err = r.db.GetContext(
-        ctx,
-        &total,
-        `SELECT COUNT(*) FROM user_track WHERE user_id = $1 AND interaction_type = 'liked'`,
-        userID,
-    )
-
-    return trackIDs, total, err
-}
-
 // ----------------- Follow List Operations -----------------
 
 type FollowEntry struct {
