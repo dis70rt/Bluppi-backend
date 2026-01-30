@@ -3,7 +3,7 @@ package users
 import (
     "database/sql"
 
-    pb "github.com/dis70rt/bluppi-backend/internals/gen"
+    pb "github.com/dis70rt/bluppi-backend/internals/gen/users"
     "google.golang.org/grpc/codes"
     "google.golang.org/grpc/status"
     "google.golang.org/protobuf/types/known/timestamppb"

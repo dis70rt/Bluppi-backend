@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package tracks;
 
-option go_package = "./internals/gen";
+option go_package = "./internals/gen/tracks";
 
 import "google/protobuf/timestamp.proto";
 

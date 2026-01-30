@@ -3,7 +3,7 @@ package users
 import (
     "context"
 
-    pb "github.com/dis70rt/bluppi-backend/internals/gen"
+    pb "github.com/dis70rt/bluppi-backend/internals/gen/users"
     "github.com/dis70rt/bluppi-backend/internals/utils"
 )
 
