@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package ytmusic;
+
+option go_package = "github.com/bluppi/bluppi-backend-v2/pkg/ytmusic";
+
+service YTMusicService {
+  rpc SearchTracks(SearchRequest) returns (SearchResponse);
+  rpc GetRecommendations(RecommendationRequest) returns (RecommendationResponse);
+}
+
+message SearchRequest {
+  string query = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message Track {
+  string track_id = 1;
+  string track_name = 2;
+  string artist_name = 3;
+  optional string album_name = 4;
+  optional int32 duration = 5;
+  repeated string genres = 6;
+  optional string image_url = 7;
+  optional string preview_url = 8;
+  string video_id = 9;
+  int64 listeners = 10;
+  int64 playcount = 11;
+  int32 popularity = 12;
+}
+
+message SearchResponse {
+  string status = 1;
+  int32 status_code = 2;
+  repeated Track tracks = 3;
+  int32 total = 4;
+  int32 limit = 5;
+  int32 offset = 6;
+  optional string message = 7;
+}
+
+message RecommendationRequest {
+  string video_id = 1;
+  int32 limit = 2;
+}
+
+message RecommendationResponse {
+  string status = 1;
+  int32 status_code = 2;
+  repeated Track tracks = 3;
+  int32 total = 4;
+  optional string message = 5;
+}
