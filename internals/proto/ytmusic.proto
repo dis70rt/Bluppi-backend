@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ytmusic;
 
-option go_package = "github.com/bluppi/bluppi-backend-v2/pkg/ytmusic";
+option go_package = "./internals/gen/ytmusic";
 
 service YTMusicService {
   rpc SearchTracks(SearchRequest) returns (SearchResponse);

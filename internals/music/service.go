@@ -1,9 +1,13 @@
 package music
 
 import (
-    "context"
-    "database/sql"
-    "errors"
+	"context"
+	"database/sql"
+	"errors"
+
+	pb "github.com/dis70rt/bluppi-backend/internals/gen/ytmusic"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -16,10 +20,18 @@ var (
 
 type Service struct {
     repo *Repository
+    ytClient     pb.YTMusicServiceClient
+    ytConn       *grpc.ClientConn
 }
 
-func NewService(repo *Repository) *Service {
-    return &Service{repo: repo}
+func NewService(repo *Repository, searchServiceAddr string) *Service {
+    conn, err := grpc.NewClient(searchServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        panic("failed to connect to YT Music service: " + err.Error())
+    }
+    
+    client := pb.NewYTMusicServiceClient(conn)
+    return &Service{repo: repo, ytClient: client, ytConn: conn}
 }
 
 // ----------------- Core Track CRUD -----------------
@@ -77,14 +89,11 @@ func (s *Service) DeleteTrack(ctx context.Context, id string) error {
 
 // ----------------- Search & Discovery -----------------
 
-// // TODO: CHECK HERE AND THINK FURTHER IMPLEMENTATION. (It should be python code as go doesn't have the required package yet.)
 func (s *Service) SearchTracks(
     ctx context.Context,
     query string,
     limit, offset int,
 ) ([]Track, int, error) {
-    // Allow empty query to return generic results if desired, or validation:
-    // if query == "" { return nil, 0, ErrInvalidInput }
 
     if limit <= 0 || limit > 100 {
         limit = 20
@@ -93,7 +102,21 @@ func (s *Service) SearchTracks(
         offset = 0
     }
 
-    return s.repo.SearchTracks(ctx, query, limit, offset)
+    req := &pb.SearchRequest{
+        Query: query,
+        Limit: int32(limit),
+        Offset: int32(offset),
+    }
+
+    resp, err := s.ytClient.SearchTracks(ctx, req)
+    if err != nil {
+        return nil, 0, err
+    }
+
+    tracks := MapProtoTracksToDomain(resp.Tracks)
+    total := int(resp.Total)
+
+    return tracks, total, nil
 }
 
 func (s *Service) GetPopularTracks(ctx context.Context, limit int) ([]Track, error) {

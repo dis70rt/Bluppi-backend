@@ -106,39 +106,39 @@ func (r *Repository) DeleteTrack(ctx context.Context, id string) error {
 
 // ----------------- Search & Discovery -----------------
 
-func (r *Repository) SearchTracks(
-    ctx context.Context,
-    query string,
-    limit, offset int,
-) ([]Track, int, error) {
-    search := "%" + query + "%"
-    tracks := []Track{}
+// func (r *Repository) SearchTracks(
+//     ctx context.Context,
+//     query string,
+//     limit, offset int,
+// ) ([]Track, int, error) {
+//     search := "%" + query + "%"
+//     tracks := []Track{}
 
-    err := r.db.SelectContext(
-        ctx,
-        &tracks,
-        `
-        SELECT * FROM tracks 
-        WHERE title ILIKE $1 OR artist ILIKE $1 OR album ILIKE $1
-        ORDER BY popularity DESC
-        LIMIT $2 OFFSET $3
-        `,
-        search, limit, offset,
-    )
-    if err != nil {
-        return nil, 0, err
-    }
+//     err := r.db.SelectContext(
+//         ctx,
+//         &tracks,
+//         `
+//         SELECT * FROM tracks 
+//         WHERE title ILIKE $1 OR artist ILIKE $1 OR album ILIKE $1
+//         ORDER BY popularity DESC
+//         LIMIT $2 OFFSET $3
+//         `,
+//         search, limit, offset,
+//     )
+//     if err != nil {
+//         return nil, 0, err
+//     }
 
-    var total int
-    err = r.db.GetContext(
-        ctx,
-        &total,
-        `SELECT COUNT(*) FROM tracks WHERE title ILIKE $1 OR artist ILIKE $1 OR album ILIKE $1`,
-        search,
-    )
+//     var total int
+//     err = r.db.GetContext(
+//         ctx,
+//         &total,
+//         `SELECT COUNT(*) FROM tracks WHERE title ILIKE $1 OR artist ILIKE $1 OR album ILIKE $1`,
+//         search,
+//     )
 
-    return tracks, total, err
-}
+//     return tracks, total, err
+// }
 
 func (r *Repository) GetPopularTracks(ctx context.Context, limit int) ([]Track, error) {
     tracks := []Track{}
