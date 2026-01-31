@@ -116,8 +116,8 @@ class YTMusicGRPCServicer(ytmusic_pb2_grpc.YTMusicServiceServicer):
 
 
 def serve():
-    host = os.getenv("GRPC_HOST", "0.0.0.0")
-    port = os.getenv("GRPC_PORT", "50052")
+    host = os.getenv("PYTHON_GRPC_HOST", "0.0.0.0")
+    port = os.getenv("PYTHON_GRPC_PORT", "50052")
     max_workers = int(os.getenv("GRPC_MAX_WORKERS", "10"))
     
     server = grpc.server(

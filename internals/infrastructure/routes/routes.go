@@ -6,7 +6,8 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
-	pb "github.com/dis70rt/bluppi-backend/internals/gen/users"
+	pb_users "github.com/dis70rt/bluppi-backend/internals/gen/users"
+	pb_tracks "github.com/dis70rt/bluppi-backend/internals/gen/tracks"
 )
 
 func Setup(server *grpc.Server, h *Handlers) {
@@ -18,12 +19,14 @@ func Setup(server *grpc.Server, h *Handlers) {
 
 	reflection.Register(server)
 	
-	// Users
 	if h.UserHandler != nil {
-		pb.RegisterUserServiceServer(server, h.UserHandler)
+		pb_users.RegisterUserServiceServer(server, h.UserHandler)
 	}
 
-	// Chat
+	if h.TrackHandler != nil {
+		pb_tracks.RegisterTrackServiceServer(server, h.TrackHandler)
+	}
+	
 	/* if h.ChatHandler != nil {
 		pb.RegisterChatServiceServer(server, h.ChatHandler)
 	} 
