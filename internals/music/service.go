@@ -18,6 +18,7 @@ var (
     ErrHistoryEmpty     = errors.New("history is empty")
 )
 
+// TODO: Redis Implementation is remaining
 type Service struct {
     repo *Repository
     ytClient     pb.YTMusicServiceClient
