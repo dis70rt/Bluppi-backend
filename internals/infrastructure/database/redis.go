@@ -40,9 +40,6 @@ func Cached[T any](
 
     data, err := json.Marshal(result)
     if err == nil {
-        // We set the cache with expiration.
-        // Note: We ignore Redis Set errors here so that if Redis is down, 
-        // the main application flow (returning data to user) is not interrupted.
         client.Set(ctx, key, data, ttl)
     }
 
