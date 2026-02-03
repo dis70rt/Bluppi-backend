@@ -8,10 +8,7 @@ import "google/protobuf/timestamp.proto";
 
 service TrackService {
   // --- Core Track CRUD ---
-  rpc CreateTrack (CreateTrackRequest) returns (TrackResponse);
   rpc GetTrack (GetTrackRequest) returns (TrackResponse);
-  rpc UpdateTrack (UpdateTrackRequest) returns (TrackResponse);
-  rpc DeleteTrack (DeleteTrackRequest) returns (DeleteTrackResponse);
 
   // --- Search & Discovery ---
   rpc SearchTracks (SearchTracksRequest) returns (SearchTracksResponse);
@@ -41,43 +38,26 @@ message Track {
   string id = 1;
   string title = 2;
   string artist = 3;
-  string album = 4;
-  int32 duration = 5;
+  int32 duration_ms = 5;
   repeated string genres = 6;
-  string image_url = 7;
-  string preview_url = 8;
-  string video_id = 9;
-  int64 listeners = 10;
-  int64 play_count = 11;
-  int32 popularity = 12;
-  google.protobuf.Timestamp created_at = 13;
-  google.protobuf.Timestamp updated_at = 14;
+  string image_small = 7;
+  string image_large = 8;
+  string preview_url = 9;
+  string video_id = 10;
+
+  int64 listeners = 11;
+  int64 play_count = 12;
+  
+  int32 popularity = 13;
+  google.protobuf.Timestamp created_at = 14;
 }
 
 message TrackSummary {
   string id = 1;
   string title = 2;
   string artist = 3;
-  string album = 4;
-  string image_url = 5;
-  int32 duration = 6;
-}
-
-// --- CRUD ---
-
-message CreateTrackRequest {
-  string id = 1;  // UUID from external source (e.g., YTMusic)
-  string title = 2;
-  string artist = 3;
-  string album = 4;
-  int32 duration = 5;
-  repeated string genres = 6;
-  string image_url = 7;
-  string preview_url = 8;
-  string video_id = 9;
-  int64 listeners = 10;
-  int64 play_count = 11;
-  int32 popularity = 12;
+  string image_small = 5;
+  int32 duration_ms = 6;
 }
 
 message TrackResponse {
@@ -86,29 +66,6 @@ message TrackResponse {
 
 message GetTrackRequest {
   string track_id = 1;
-}
-
-message UpdateTrackRequest {
-  string track_id = 1;
-  optional string title = 2;
-  optional string artist = 3;
-  optional string album = 4;
-  optional int32 duration = 5;
-  repeated string genres = 6;
-  optional string image_url = 7;
-  optional string preview_url = 8;
-  optional string video_id = 9;
-  optional int64 listeners = 10;
-  optional int64 play_count = 11;
-  optional int32 popularity = 12;
-}
-
-message DeleteTrackRequest {
-  string track_id = 1;
-}
-
-message DeleteTrackResponse {
-  string message = 1;
 }
 
 // --- Search & Discovery ---
@@ -169,8 +126,7 @@ message LikedTrackEntry {
   string track_id = 1;
   string title = 2;
   string artist = 3;
-  string album = 4;
-  string image_url = 5;
+  string image_small = 5;
   google.protobuf.Timestamp liked_at = 6;
 }
 
@@ -205,8 +161,8 @@ message HistoryTrackEntry {
   string track_id = 1;
   string title = 2;
   string artist = 3;
-  string album = 4;
-  string image_url = 5;
+  string image_large = 4;
+  string image_small = 5;
   google.protobuf.Timestamp played_at = 6;
 }
 

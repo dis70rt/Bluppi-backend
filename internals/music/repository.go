@@ -5,7 +5,6 @@ import (
     "database/sql"
     "errors"
     "fmt"
-    "strings"
     "time"
 
     "github.com/jmoiron/sqlx"
@@ -32,122 +31,67 @@ func NewRepositoryWithTx(tx *sqlx.Tx) *Repository {
     return &Repository{db: tx}
 }
 
-// ----------------- Core Track CRUD -----------------
-
-func (r *Repository) CreateTrack(ctx context.Context, t *Track) error {
-    query := `
-        INSERT INTO tracks (
-            id, title, artist, album, duration, genre,
-            image_url, preview_url, video_id,
-            listeners, play_count, popularity, created_at
-        ) VALUES (
-            :id, :title, :artist, :album, :duration, :genre,
-            :image_url, :preview_url, :video_id,
-            :listeners, :play_count, :popularity, :created_at
-        )
-        ON CONFLICT (id) DO NOTHING
+func baseSelectQuery() string {
+    return `
+        SELECT 
+            t.track_id, t.title, t.artists, t.genres, t.duration_ms, 
+            t.image_small, t.image_large, t.preview_url, t.video_id, 
+            t.popularity, t.created_at,
+            COALESCE(s.listeners, 0) as listeners,
+            COALESCE(s.play_count, 0) as play_count
+        FROM tracks t
+        LEFT JOIN track_stats s ON t.track_id = s.track_id
     `
-    _, err := r.db.NamedExecContext(ctx, query, t)
-    return err
 }
+
+// ----------------- Core Track Reading -----------------
 
 func (r *Repository) GetTrack(ctx context.Context, id string) (*Track, error) {
     var t Track
-    err := r.db.GetContext(ctx, &t, `SELECT * FROM tracks WHERE id = $1`, id)
+    query := baseSelectQuery() + ` WHERE t.track_id = $1`
+    err := r.db.GetContext(ctx, &t, query, id)
     if errors.Is(err, sql.ErrNoRows) {
         return nil, nil
     }
     return &t, err
 }
 
-func (r *Repository) UpdateTrack(ctx context.Context, id string, fields map[string]any) error {
-    if len(fields) == 0 {
-        return errors.New("no fields to update")
-    }
-
-    var setClauses []string
-    var args []interface{}
-    i := 1
-
-    for key, value := range fields {
-        setClauses = append(setClauses, fmt.Sprintf("%s = $%d", key, i))
-        args = append(args, value)
-        i++
-    }
-
-    args = append(args, id)
-    query := fmt.Sprintf("UPDATE tracks SET %s WHERE id = $%d", strings.Join(setClauses, ", "), i)
-
-    res, err := r.db.ExecContext(ctx, query, args...)
-    if err != nil {
-        return err
-    }
-
-    rows, err := res.RowsAffected()
-    if err != nil {
-        return err
-    }
-    if rows == 0 {
-        return sql.ErrNoRows
-    }
-    return nil
-}
-
-func (r *Repository) DeleteTrack(ctx context.Context, id string) error {
-    res, err := r.db.ExecContext(ctx, `DELETE FROM tracks WHERE id = $1`, id)
-    if err != nil {
-        return err
-    }
-    if rows, _ := res.RowsAffected(); rows == 0 {
-        return sql.ErrNoRows
-    }
-    return nil
-}
-
 // ----------------- Search & Discovery -----------------
 
-// func (r *Repository) SearchTracks(
-//     ctx context.Context,
-//     query string,
-//     limit, offset int,
-// ) ([]Track, int, error) {
-//     search := "%" + query + "%"
-//     tracks := []Track{}
+func (r *Repository) SearchTracks(
+    ctx context.Context,
+    query string,
+    limit, offset int,
+) ([]Track, int, error) {
+    tracks := []Track{}
 
-//     err := r.db.SelectContext(
-//         ctx,
-//         &tracks,
-//         `
-//         SELECT * FROM tracks 
-//         WHERE title ILIKE $1 OR artist ILIKE $1 OR album ILIKE $1
-//         ORDER BY popularity DESC
-//         LIMIT $2 OFFSET $3
-//         `,
-//         search, limit, offset,
-//     )
-//     if err != nil {
-//         return nil, 0, err
-//     }
+    sqlQuery := baseSelectQuery() + `
+        WHERE to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres) @@ plainto_tsquery('simple', $1)
+        ORDER BY ts_rank(to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres), plainto_tsquery('simple', $1)) DESC, t.popularity DESC
+        LIMIT $2 OFFSET $3
+    `
 
-//     var total int
-//     err = r.db.GetContext(
-//         ctx,
-//         &total,
-//         `SELECT COUNT(*) FROM tracks WHERE title ILIKE $1 OR artist ILIKE $1 OR album ILIKE $1`,
-//         search,
-//     )
+    err := r.db.SelectContext(ctx, &tracks, sqlQuery, query, limit, offset)
+    if err != nil {
+        return nil, 0, err
+    }
 
-//     return tracks, total, err
-// }
+    var total int
+    countQuery := `
+        SELECT COUNT(*) 
+        FROM tracks 
+        WHERE to_tsvector('simple', title || ' ' || artists || ' ' || genres) @@ plainto_tsquery('simple', $1)
+    `
+    err = r.db.GetContext(ctx, &total, countQuery, query)
+
+    return tracks, total, err
+}
 
 func (r *Repository) GetPopularTracks(ctx context.Context, limit int) ([]Track, error) {
     tracks := []Track{}
-    err := r.db.SelectContext(
-        ctx,
-        &tracks,
-        `SELECT * FROM tracks ORDER BY popularity DESC LIMIT $1`,
-        limit,
-    )
+    query := baseSelectQuery() + ` ORDER BY t.popularity DESC LIMIT $1`
+    
+    err := r.db.SelectContext(ctx, &tracks, query, limit)
     return tracks, err
 }
 
@@ -158,17 +102,15 @@ func (r *Repository) GetTracksByGenre(
 ) ([]Track, int, error) {
     tracks := []Track{}
 
-    err := r.db.SelectContext(
-        ctx,
-        &tracks,
-        `
-        SELECT * FROM tracks
-        WHERE $1 = ANY(genre)
-        ORDER BY popularity DESC
+    searchPattern := "%" + genre + "%"
+
+    query := baseSelectQuery() + `
+        WHERE t.genres ILIKE $1
+        ORDER BY t.popularity DESC
         LIMIT $2 OFFSET $3
-        `,
-        genre, limit, offset,
-    )
+    `
+
+    err := r.db.SelectContext(ctx, &tracks, query, searchPattern, limit, offset)
     if err != nil {
         return nil, 0, err
     }
@@ -177,8 +119,8 @@ func (r *Repository) GetTracksByGenre(
     err = r.db.GetContext(
         ctx,
         &total,
-        `SELECT COUNT(*) FROM tracks WHERE $1 = ANY(genre)`,
-        genre,
+        `SELECT COUNT(*) FROM tracks WHERE genres ILIKE $1`,
+        searchPattern,
     )
 
     return tracks, total, err
@@ -190,9 +132,8 @@ type LikedTrackEntry struct {
     TrackID    string    `db:"track_id"`
     LikedAt    time.Time `db:"interacted_at"`
     Title      string    `db:"title"`
-    Artist     string    `db:"artist"`
-    Album      *string   `db:"album"`
-    ImageURL   *string   `db:"image_url"`
+    Artists    string    `db:"artists"`
+    ImageSmall *string   `db:"image_small"`
 }
 
 func (r *Repository) LikeTrack(ctx context.Context, userID, trackID string) error {
@@ -248,9 +189,9 @@ func (r *Repository) GetLikedTracks(
         ctx,
         &results,
         `
-        SELECT ut.track_id, ut.interacted_at, t.title, t.artist, t.album, t.image_url
+        SELECT ut.track_id, ut.interacted_at, t.title, t.artists, t.image_small
         FROM user_track ut
-        JOIN tracks t ON ut.track_id = t.id
+        JOIN tracks t ON ut.track_id = t.track_id
         WHERE ut.user_id = $1 AND ut.interaction_type = 'liked'
         ORDER BY ut.interacted_at DESC
         LIMIT $2 OFFSET $3
@@ -274,15 +215,6 @@ func (r *Repository) GetLikedTracks(
 
 // ----------------- History -----------------
 
-type HistoryEntry struct {
-    TrackID  string    `db:"track_id"`
-    PlayedAt time.Time `db:"played_at"`
-    Title    string    `db:"title"`
-    Artist   string    `db:"artist"`
-    Album    *string   `db:"album"`
-    ImageURL *string   `db:"image_url"`
-}
-
 func (r *Repository) AddTrackToHistory(ctx context.Context, userID, trackID string) error {
     _, err := r.db.ExecContext(
         ctx,
@@ -290,21 +222,10 @@ func (r *Repository) AddTrackToHistory(ctx context.Context, userID, trackID stri
         userID, trackID,
     )
     if err != nil {
-        return err
+        return fmt.Errorf("failed to add history log: %w", err)
     }
 
-    _, err = r.db.ExecContext(
-        ctx,
-        `
-        INSERT INTO user_track (user_id, track_id, interaction_type, interacted_at)
-        VALUES ($1, $2, 'last_played', NOW())
-        ON CONFLICT (user_id, track_id, interaction_type)
-        DO UPDATE SET interacted_at = NOW()
-        `,
-        userID, trackID,
-    )
-
-    return err
+    return nil
 }
 
 func (r *Repository) GetTrackHistory(
@@ -318,9 +239,9 @@ func (r *Repository) GetTrackHistory(
         ctx,
         &history,
         `
-        SELECT h.track_id, h.played_at, t.title, t.artist, t.album, t.image_url
+        SELECT h.track_id, h.played_at, t.title, t.artists, t.image_small
         FROM history_tracks h
-        JOIN tracks t ON h.track_id = t.id
+        JOIN tracks t ON h.track_id = t.track_id
         WHERE h.user_id = $1
         ORDER BY h.played_at DESC
         LIMIT $2 OFFSET $3

@@ -12,7 +12,8 @@ services:
     ports:
       - "${DB_PORT}:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - /data/pgdata:/var/lib/postgresql/data
+
     networks:
       - cloudflared
 
@@ -174,6 +175,3 @@ services:
 networks:
   cloudflared:
     name: cloudflared
-
-volumes:
-  pg_data:

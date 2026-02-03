@@ -1,116 +1,130 @@
--- =========================
--- EXTENSIONS
--- =========================
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-
--- =========================
 -- TRACKS
--- =========================
-CREATE TABLE tracks (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS tracks (
+  track_id     TEXT PRIMARY KEY,
+
   title        TEXT NOT NULL,
-  artist       TEXT NOT NULL,
-  album        TEXT,
-  duration     INT CHECK (duration >= 0),
-  genre        TEXT[] NOT NULL DEFAULT '{}',
-  image_url    TEXT,
+  artists      TEXT NOT NULL,
+  genres       TEXT NOT NULL,
+
+  duration_ms  INT NOT NULL CHECK (duration_ms >= 0),
+
+  image_small  TEXT,
+  image_large  TEXT,
   preview_url  TEXT,
   video_id     TEXT,
 
-  listeners    INT NOT NULL DEFAULT 0,
-  play_count   INT NOT NULL DEFAULT 0,
   popularity   INT NOT NULL DEFAULT 0,
 
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Search / filter indexes
-CREATE INDEX idx_tracks_title_fts
-  ON tracks USING GIN (to_tsvector('simple', title));
+-- Full text search index
+CREATE INDEX IF NOT EXISTS idx_tracks_search
+ON tracks
+USING GIN (
+  to_tsvector('simple', title || ' ' || artists || ' ' || genres)
+);
 
-CREATE INDEX idx_tracks_artist
-  ON tracks (artist);
+-- Popularity sort index
+CREATE INDEX IF NOT EXISTS idx_tracks_popularity
+ON tracks (popularity DESC);
 
-CREATE INDEX idx_tracks_genre
-  ON tracks USING GIN (genre);
+-- Trigram indexes for fuzzy matching
+CREATE INDEX IF NOT EXISTS idx_tracks_title_trgm
+ON tracks USING GIN (title gin_trgm_ops);
+
+CREATE INDEX IF NOT EXISTS idx_tracks_artists_trgm
+ON tracks USING GIN (artists gin_trgm_ops);
 
 
+-- TRACK STATISTICS
+CREATE TABLE IF NOT EXISTS track_stats (
+  track_id   TEXT PRIMARY KEY REFERENCES tracks(track_id) ON DELETE CASCADE,
 
--- =========================
--- PLAY HISTORY
--- =========================
-CREATE TABLE history_tracks (
+  play_count BIGINT NOT NULL DEFAULT 0,
+  listeners  BIGINT NOT NULL DEFAULT 0
+);
+
+
+-- LISTENING HISTORY
+CREATE TABLE IF NOT EXISTS history_tracks (
   id        BIGSERIAL PRIMARY KEY,
-  user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  track_id  UUID NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
+
+  user_id   TEXT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  track_id  TEXT      NOT NULL REFERENCES tracks(track_id) ON DELETE CASCADE,
+
   played_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_history_by_user
-  ON history_tracks (user_id, played_at DESC);
+-- ============================
+-- STATS TRIGGERS
+-- ============================
 
-CREATE INDEX idx_history_by_track
-  ON history_tracks (track_id, played_at DESC);
-
-
-
--- =========================
--- USER ↔ TRACK INTERACTIONS
--- =========================
-CREATE TYPE track_interaction_type AS ENUM (
-  'liked',
-  'last_played',
-  'most_played',
-  'history'
-);
-
-CREATE TABLE user_track (
-  user_id          TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  track_id         UUID NOT NULL REFERENCES tracks(id) ON DELETE CASCADE,
-  interaction_type track_interaction_type NOT NULL,
-  interacted_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (user_id, track_id, interaction_type)
-);
-
-CREATE INDEX idx_user_track_by_user
-  ON user_track (user_id, interacted_at DESC);
-
-CREATE INDEX idx_user_track_by_track
-  ON user_track (track_id);
-
-
-
--- =========================
--- PLAY COUNT + LISTENER TRIGGER
--- =========================
-CREATE OR REPLACE FUNCTION trg_update_track_stats()
+CREATE OR REPLACE FUNCTION trg_update_track_play_count()
 RETURNS trigger AS $$
 BEGIN
-  -- increment play count
-  UPDATE tracks
-    SET play_count = play_count + 1
-    WHERE id = NEW.track_id;
-
-  -- increment listeners only on first play by user
-  IF NOT EXISTS (
-    SELECT 1
-    FROM history_tracks
-    WHERE user_id = NEW.user_id
-      AND track_id = NEW.track_id
-      AND id <> NEW.id
-  ) THEN
-    UPDATE tracks
-      SET listeners = listeners + 1
-      WHERE id = NEW.track_id;
-  END IF;
+  INSERT INTO track_stats (track_id, play_count)
+  VALUES (NEW.track_id, 1)
+  ON CONFLICT (track_id)
+  DO UPDATE SET
+    play_count = track_stats.play_count + 1;
 
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_track_stats
+CREATE TRIGGER trg_history_play_increment
 AFTER INSERT ON history_tracks
 FOR EACH ROW
-EXECUTE FUNCTION trg_update_track_stats();
+EXECUTE FUNCTION trg_update_track_play_count();
+
+-- Fast lookup for "My History"
+CREATE INDEX IF NOT EXISTS idx_history_user_time
+ON history_tracks (user_id, played_at DESC);
+
+-- Analytics lookup "Who listened to this track"
+CREATE INDEX IF NOT EXISTS idx_history_track
+ON history_tracks (track_id);
+
+
+-- USER INTERACTIONS
+DO $$ BEGIN
+    CREATE TYPE track_interaction_type AS ENUM ('liked', 'saved', 'hidden');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS user_track (
+  user_id          TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  track_id         TEXT NOT NULL REFERENCES tracks(track_id) ON DELETE CASCADE,
+
+  interaction_type track_interaction_type NOT NULL,
+  interacted_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  PRIMARY KEY (user_id, track_id, interaction_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_track_track
+ON user_track (track_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_track_user
+ON user_track (user_id, interacted_at DESC);
+
+CREATE TABLE artists (
+  artist_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  image_small TEXT,
+  image_large TEXT
+);
+
+CREATE TABLE track_artists (
+  track_id  TEXT NOT NULL REFERENCES tracks(track_id),
+  artist_id TEXT NOT NULL REFERENCES artists(artist_id),
+  PRIMARY KEY (track_id, artist_id)
+);
+
+CREATE INDEX idx_track_artists_artist
+ON track_artists (artist_id);
