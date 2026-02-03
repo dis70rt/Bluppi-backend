@@ -15,30 +15,7 @@ func NewGrpcHandler(s *Service) *GrpcHandler {
     return &GrpcHandler{service: s}
 }
 
-func (h *GrpcHandler) CreateTrack(ctx context.Context, req *pb.CreateTrackRequest) (*pb.TrackResponse, error) {
-    track := &Track{
-        ID:         req.Id,
-        Title:      req.Title,
-        Artist:     req.Artist,
-        Album:      stringToPtr(req.Album),
-        Duration:   int(req.Duration),
-        Genre:      req.Genres,
-        ImageURL:   stringToPtr(req.ImageUrl),
-        PreviewURL: stringToPtr(req.PreviewUrl),
-        VideoID:    stringToPtr(req.VideoId),
-        Listeners:  int(req.Listeners),
-        PlayCount:  int(req.PlayCount),
-        Popularity: int(req.Popularity),
-    }
-
-    if err := h.service.CreateTrack(ctx, track); err != nil {
-        return nil, h.mapError(err)
-    }
-
-    return &pb.TrackResponse{
-        Track: h.mapTrackToProto(track),
-    }, nil
-}
+// --- Core Track Reading ---
 
 func (h *GrpcHandler) GetTrack(ctx context.Context, req *pb.GetTrackRequest) (*pb.TrackResponse, error) {
     track, err := h.service.GetTrack(ctx, req.TrackId)
@@ -51,66 +28,7 @@ func (h *GrpcHandler) GetTrack(ctx context.Context, req *pb.GetTrackRequest) (*p
     }, nil
 }
 
-func (h *GrpcHandler) UpdateTrack(ctx context.Context, req *pb.UpdateTrackRequest) (*pb.TrackResponse, error) {
-    fields := make(map[string]any)
-
-    if req.Title != nil {
-        fields["title"] = *req.Title
-    }
-    if req.Artist != nil {
-        fields["artist"] = *req.Artist
-    }
-    if req.Album != nil {
-        fields["album"] = *req.Album
-    }
-    if req.Duration != nil {
-        fields["duration"] = int(*req.Duration)
-    }
-    if len(req.Genres) > 0 {
-        fields["genre"] = req.Genres
-    }
-    if req.ImageUrl != nil {
-        fields["image_url"] = *req.ImageUrl
-    }
-    if req.PreviewUrl != nil {
-        fields["preview_url"] = *req.PreviewUrl
-    }
-    if req.VideoId != nil {
-        fields["video_id"] = *req.VideoId
-    }
-    if req.Listeners != nil {
-        fields["listeners"] = int(*req.Listeners)
-    }
-    if req.PlayCount != nil {
-        fields["play_count"] = int(*req.PlayCount)
-    }
-    if req.Popularity != nil {
-        fields["popularity"] = int(*req.Popularity)
-    }
-
-    if err := h.service.UpdateTrack(ctx, req.TrackId, fields); err != nil {
-        return nil, h.mapError(err)
-    }
-
-    track, err := h.service.GetTrack(ctx, req.TrackId)
-    if err != nil {
-        return nil, h.mapError(err)
-    }
-
-    return &pb.TrackResponse{
-        Track: h.mapTrackToProto(track),
-    }, nil
-}
-
-func (h *GrpcHandler) DeleteTrack(ctx context.Context, req *pb.DeleteTrackRequest) (*pb.DeleteTrackResponse, error) {
-    if err := h.service.DeleteTrack(ctx, req.TrackId); err != nil {
-        return nil, h.mapError(err)
-    }
-
-    return &pb.DeleteTrackResponse{
-        Message: "track deleted successfully",
-    }, nil
-}
+// --- Search & Discovery ---
 
 func (h *GrpcHandler) SearchTracks(ctx context.Context, req *pb.SearchTracksRequest) (*pb.SearchTracksResponse, error) {
     tracks, total, err := h.service.SearchTracks(ctx, req.Query, int(req.Limit), int(req.Offset))
@@ -166,6 +84,8 @@ func (h *GrpcHandler) GetTracksByGenre(ctx context.Context, req *pb.GetTracksByG
     }, nil
 }
 
+// --- User Interactions ---
+
 func (h *GrpcHandler) LikeTrack(ctx context.Context, req *pb.LikeTrackRequest) (*pb.StatusResponse, error) {
     if err := h.service.LikeTrack(ctx, req.UserId, req.TrackId); err != nil {
         return nil, h.mapError(err)
@@ -215,6 +135,8 @@ func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracks
         Total:  int64(total),
     }, nil
 }
+
+// --- History ---
 
 func (h *GrpcHandler) AddTrackToHistory(ctx context.Context, req *pb.AddTrackToHistoryRequest) (*pb.StatusResponse, error) {
     if err := h.service.AddTrackToHistory(ctx, req.UserId, req.TrackId); err != nil {

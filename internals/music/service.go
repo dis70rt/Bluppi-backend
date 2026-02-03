@@ -1,51 +1,28 @@
 package music
 
 import (
-	"context"
-	"database/sql"
-	"errors"
-
-	pb "github.com/dis70rt/bluppi-backend/internals/gen/ytmusic"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+    "context"
+    "database/sql"
+    "errors"
 )
 
 var (
-    ErrTrackNotFound    = errors.New("track not found")
-    ErrInvalidInput     = errors.New("invalid input")
-    ErrAlreadyLiked     = errors.New("track already liked")
-    ErrNotLiked         = errors.New("track not liked")
-    ErrHistoryEmpty     = errors.New("history is empty")
+    ErrTrackNotFound = errors.New("track not found")
+    ErrInvalidInput  = errors.New("invalid input")
+    ErrAlreadyLiked  = errors.New("track already liked")
+    ErrNotLiked      = errors.New("track not liked")
+    ErrHistoryEmpty  = errors.New("history is empty")
 )
 
 type Service struct {
     repo *Repository
-    ytClient     pb.YTMusicServiceClient
-    ytConn       *grpc.ClientConn
 }
 
-func NewService(repo *Repository, searchServiceAddr string) *Service {
-    conn, err := grpc.NewClient(searchServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-    if err != nil {
-        panic("failed to connect to YT Music service: " + err.Error())
-    }
-    
-    client := pb.NewYTMusicServiceClient(conn)
-    return &Service{repo: repo, ytClient: client, ytConn: conn}
+func NewService(repo *Repository) *Service {
+    return &Service{repo: repo}
 }
 
-// ----------------- Core Track CRUD -----------------
-
-func (s *Service) CreateTrack(ctx context.Context, t *Track) error {
-    if t == nil {
-        return ErrInvalidInput
-    }
-    if t.ID == "" || t.Title == "" || t.Artist == "" {
-        return ErrInvalidInput
-    }
-    
-    return s.repo.CreateTrack(ctx, t)
-}
+// ----------------- Core Track Reading -----------------
 
 func (s *Service) GetTrack(ctx context.Context, id string) (*Track, error) {
     if id == "" {
@@ -63,30 +40,6 @@ func (s *Service) GetTrack(ctx context.Context, id string) (*Track, error) {
     return t, nil
 }
 
-func (s *Service) UpdateTrack(ctx context.Context, id string, fields map[string]any) error {
-    if id == "" || len(fields) == 0 {
-        return ErrInvalidInput
-    }
-
-    err := s.repo.UpdateTrack(ctx, id, fields)
-    if errors.Is(err, sql.ErrNoRows) {
-        return ErrTrackNotFound
-    }
-    return err
-}
-
-func (s *Service) DeleteTrack(ctx context.Context, id string) error {
-    if id == "" {
-        return ErrInvalidInput
-    }
-
-    err := s.repo.DeleteTrack(ctx, id)
-    if errors.Is(err, sql.ErrNoRows) {
-        return ErrTrackNotFound
-    }
-    return err
-}
-
 // ----------------- Search & Discovery -----------------
 
 func (s *Service) SearchTracks(
@@ -102,21 +55,7 @@ func (s *Service) SearchTracks(
         offset = 0
     }
 
-    req := &pb.SearchRequest{
-        Query: query,
-        Limit: int32(limit),
-        Offset: int32(offset),
-    }
-
-    resp, err := s.ytClient.SearchTracks(ctx, req)
-    if err != nil {
-        return nil, 0, err
-    }
-
-    tracks := MapProtoTracksToDomain(resp.Tracks)
-    total := int(resp.Total)
-
-    return tracks, total, nil
+    return s.repo.SearchTracks(ctx, query, limit, offset)
 }
 
 func (s *Service) GetPopularTracks(ctx context.Context, limit int) ([]Track, error) {

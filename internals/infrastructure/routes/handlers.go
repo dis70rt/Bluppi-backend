@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"os"
-
 	"github.com/dis70rt/bluppi-backend/internals/music"
 	"github.com/dis70rt/bluppi-backend/internals/users"
 	"github.com/jmoiron/sqlx"
@@ -22,7 +20,7 @@ func BuildHandlers(db *sqlx.DB) *Handlers {
 
 	// --- Tracks Modules ---
 	trackRepo := music.NewRepository(db)
-	trackService := music.NewService(trackRepo, os.Getenv("MUSIC_SERVICE_ADDR"))
+	trackService := music.NewService(trackRepo)
 	trackHandler := music.NewGrpcHandler(trackService)
 
 	// --- Future Modules ---
