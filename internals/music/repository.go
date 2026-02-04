@@ -67,7 +67,7 @@ func (r *Repository) SearchTracks(
 
     sqlQuery := baseSelectQuery() + `
         WHERE to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres) @@ plainto_tsquery('simple', $1)
-        ORDER BY ts_rank(to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres), plainto_tsquery('simple', $1)) DESC, t.popularity DESC
+        ORDER BY t.popularity DESC, ts_rank(to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres), plainto_tsquery('simple', $1)) DESC
         LIMIT $2 OFFSET $3
     `
 

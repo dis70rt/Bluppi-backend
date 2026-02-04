@@ -1,5 +1,6 @@
 /internals/gen/
 .env
+/searchMusic
 
 # Python
 .venv/

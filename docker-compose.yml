@@ -16,25 +16,14 @@ services:
 
     networks:
       - cloudflared
-
-  grpc-python:
-    build:
-      context: .
-      dockerfile: Docker/python.Dockerfile
-    container_name: grpc-python
-    env_file:
-      - .env
-    networks:
-      - cloudflared
   
   bluppi-api:
     build:
       context: .
-      dockerfile: Docker/go.Dockerfile
+      dockerfile: Dockerfile
     container_name: bluppi-api
     depends_on:
       - postgres
-      - grpc-python
     env_file:
       - .env
     ports:
