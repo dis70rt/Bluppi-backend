@@ -23,6 +23,8 @@ func (h *GrpcHandler) mapUserToProto(u *User) *pb.User {
         FollowerCount:  int32(u.FollowerCount),
         FollowingCount: int32(u.FollowingCount),
         CreatedAt:      timestamppb.New(u.CreatedAt),
+        DateOfBirth:    timestamppb.New(u.DateOfBirth),
+        Gender:         u.Gender,
     }
 }
 

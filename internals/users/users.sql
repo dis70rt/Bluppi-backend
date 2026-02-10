@@ -24,6 +24,8 @@ CREATE UNIQUE INDEX users_email_ci
 CREATE UNIQUE INDEX users_username_ci
   ON users ((LOWER(username)));
 
+CREATE UNIQUE INDEX users_pkey
+  ON users(id);
 
 
 -- =========================
@@ -104,3 +106,9 @@ CREATE INDEX idx_searches_query_fts
 -- Fast lookup by user
 CREATE INDEX idx_searches_by_user
   ON recent_searches (user_id, searched_at DESC);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS date_of_birth TIMESTAMPTZ;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS gender TEXT;

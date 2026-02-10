@@ -115,6 +115,13 @@ func (s *Service) EmailExists(ctx context.Context, email string) (bool, error) {
 	return s.repo.EmailExists(ctx, email)
 }
 
+func (s *Service) UserExists(ctx context.Context, id string) (bool, error) {
+	if id == "" {
+		return false, ErrInvalidInput
+	}
+	return s.repo.UserExists(ctx, id)
+}
+
 func (s *Service) SearchUsers(
 	ctx context.Context,
 	query string,

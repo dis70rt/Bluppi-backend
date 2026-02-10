@@ -18,6 +18,8 @@ type User struct {
 	FollowerCount  int       `db:"follower_count"`
 	FollowingCount int       `db:"following_count"`
 	CreatedAt      time.Time `db:"created_at"`
+	DateOfBirth    time.Time     `db:"date_of_birth"`
+    Gender         string        `db:"gender"`
 }
 
 type Follow struct {

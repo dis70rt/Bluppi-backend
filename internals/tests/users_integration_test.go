@@ -30,6 +30,8 @@ func setupTestService(t *testing.T, db *sqlx.DB) (*users.Service, func()) {
 }
 
 func createTestUser(id, username, email string) *users.User {
+    now := time.Now()
+    gender := "male"
     return &users.User{
         ID:             id,
         Email:          email,
@@ -40,7 +42,9 @@ func createTestUser(id, username, email string) *users.User {
         Phone:          StringPtr("+1234567890"),
         ProfilePic:     nil,
         FavoriteGenres: []string{"Rock", "Jazz"},
-        CreatedAt:      time.Now(),
+        CreatedAt:      now,
+        DateOfBirth:    now,
+        Gender:         gender,
     }
 }
 

@@ -31,6 +31,19 @@ services:
     networks:
       - cloudflared
 
+  solr:
+    image: solr:9.10.1
+    container_name: bluppi-solr
+    restart: unless-stopped
+    ports:
+      - "8983:8983"
+    volumes:
+      - /data/solr-data:/var/solr
+    environment:
+      SOLR_JAVA_MEM: "-Xms2g -Xmx4g"
+    networks:
+      - cloudflared      
+  
   # redis:
   #   image: redis:7-alpine
   #   container_name: bluppi-redis

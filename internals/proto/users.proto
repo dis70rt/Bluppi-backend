@@ -18,6 +18,7 @@ service UserService {
   rpc SearchUsers (SearchUsersRequest) returns (SearchUsersResponse);
   rpc CheckUsername (CheckUsernameRequest) returns (CheckExistenceResponse);
   rpc CheckEmail (CheckEmailRequest) returns (CheckExistenceResponse);
+  rpc CheckUserExists (CheckUserRequest) returns (CheckExistenceResponse);
 
   // --- Stats & History ---
   rpc GetUserStats (GetUserStatsRequest) returns (UserStatsResponse);
@@ -49,6 +50,8 @@ message User {
   int32 follower_count = 10;
   int32 following_count = 11;
   google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp date_of_birth = 13;
+  string gender = 14;
 }
 
 // --- Requests & Responses ---
@@ -64,6 +67,8 @@ message CreateUserRequest {
   repeated string favorite_genres = 8;
   // Auth provider ID (passed from middleware/context usually, but explicitly here for creation)
   string id = 9; 
+  google.protobuf.Timestamp date_of_birth = 10;
+  string gender = 11;
 }
 
 message UserResponse {
@@ -87,7 +92,9 @@ message UpdateUserRequest {
   optional string country = 5;
   optional string phone = 6;
   optional string profile_pic = 7;
-  repeated string favorite_genres = 8; 
+  repeated string favorite_genres = 8;
+  optional google.protobuf.Timestamp date_of_birth = 9;
+  optional string gender = 10;
 }
 
 message DeleteUserRequest {
@@ -117,6 +124,10 @@ message CheckUsernameRequest {
 
 message CheckEmailRequest {
   string email = 1;
+}
+
+message CheckUserRequest {
+  string id = 1;
 }
 
 message CheckExistenceResponse {

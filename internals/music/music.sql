@@ -128,3 +128,24 @@ CREATE TABLE track_artists (
 
 CREATE INDEX idx_track_artists_artist
 ON track_artists (artist_id);
+
+ALTER TABLE tracks
+ADD COLUMN search_vector tsvector;
+
+-- 8 WORKER are used for faster result
+UPDATE tracks
+SET search_vector =
+  to_tsvector('simple', title || ' ' || artists || ' ' || genres)
+WHERE search_vector IS NULL
+  AND mod(abs(hashtext(track_id)), 8) = 0;
+
+
+CREATE INDEX idx_tracks_search_vector
+ON tracks USING GIN (search_vector);
+
+DROP INDEX idx_tracks_search;
+
+ALTER TABLE tracks DROP COLUMN search_vector;
+
+DROP INDEX IF EXISTS idx_tracks_title_trgm;
+DROP INDEX IF EXISTS idx_tracks_artists_trgm;

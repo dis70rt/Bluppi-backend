@@ -38,8 +38,8 @@ func NewRepositoryWithTx(tx *sqlx.Tx) *Repository {
 
 func (r *Repository) CreateUser(ctx context.Context, u *User) error {
     query := `
-        INSERT INTO users (id, email, username, name, bio, country, phone, profile_pic, favorite_genres)
-        VALUES (:id, :email, :username, :name, :bio, :country, :phone, :profile_pic, :favorite_genres)
+        INSERT INTO users (id, email, username, name, bio, country, phone, profile_pic, favorite_genres, date_of_birth, gender)
+        VALUES (:id, :email, :username, :name, :bio, :country, :phone, :profile_pic, :favorite_genres, :date_of_birth, :gender)
     `
     
     _, err := r.db.NamedExecContext(ctx, query, u)
@@ -144,6 +144,17 @@ func (r *Repository) EmailExists(ctx context.Context, email string) (bool, error
 		&exists,
 		`SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`,
 		email,
+	)
+	return exists, err
+}
+
+func (r *Repository) UserExists(ctx context.Context, id string) (bool, error) {
+	var exists bool
+	err := r.db.GetContext(
+		ctx,
+		&exists,
+		`SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`,
+		id,
 	)
 	return exists, err
 }

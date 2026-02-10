@@ -21,6 +21,14 @@ type Track struct {
     PlayCount int64 `db:"play_count"`
 }
 
+type SearchTrack struct {
+    ID         string  `db:"track_id"`
+    Title      string  `db:"title"`
+    Artists    string  `db:"artists"`
+    ImageSmall *string `db:"image_small"`
+    PreviewURL *string `db:"preview_url"`
+}
+
 type TrackStats struct {
     TrackID   string `db:"track_id"`
     PlayCount int64  `db:"play_count"`
