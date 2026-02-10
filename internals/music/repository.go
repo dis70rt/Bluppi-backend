@@ -1,13 +1,15 @@
 package music
 
 import (
-    "context"
-    "database/sql"
-    "errors"
-    "fmt"
-    "time"
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"sort"
+	"time"
 
-    "github.com/jmoiron/sqlx"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Querier interface {
@@ -19,16 +21,21 @@ type Querier interface {
     NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
 }
 
+type SolrSearcher interface {
+    Search(ctx context.Context, query string, limit int, cursor string) ([]string, string, error)
+}
+
 type Repository struct {
     db Querier
+    solr SolrSearcher
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
-    return &Repository{db: db}
+func NewRepository(db *sqlx.DB, solr SolrSearcher) *Repository {
+    return &Repository{db: db, solr: solr}
 }
 
-func NewRepositoryWithTx(tx *sqlx.Tx) *Repository {
-    return &Repository{db: tx}
+func NewRepositoryWithTx(tx *sqlx.Tx, solr SolrSearcher) *Repository {
+    return &Repository{db: tx, solr: solr}
 }
 
 func baseSelectQuery() string {
@@ -61,30 +68,47 @@ func (r *Repository) GetTrack(ctx context.Context, id string) (*Track, error) {
 func (r *Repository) SearchTracks(
     ctx context.Context,
     query string,
-    limit, offset int,
-) ([]Track, int, error) {
-    tracks := []Track{}
+    limit int,
+    cursor string,
+) ([]SearchTrack, string, error) {
 
-    sqlQuery := baseSelectQuery() + `
-        WHERE to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres) @@ plainto_tsquery('simple', $1)
-        ORDER BY t.popularity DESC, ts_rank(to_tsvector('simple', t.title || ' ' || t.artists || ' ' || t.genres), plainto_tsquery('simple', $1)) DESC
-        LIMIT $2 OFFSET $3
-    `
-
-    err := r.db.SelectContext(ctx, &tracks, sqlQuery, query, limit, offset)
+    solrIDs, nextCursor, err := r.solr.Search(ctx, query, limit, cursor)
     if err != nil {
-        return nil, 0, err
+        return nil, "", err
     }
 
-    var total int
-    countQuery := `
-        SELECT COUNT(*) 
-        FROM tracks 
-        WHERE to_tsvector('simple', title || ' ' || artists || ' ' || genres) @@ plainto_tsquery('simple', $1)
-    `
-    err = r.db.GetContext(ctx, &total, countQuery, query)
+    if len(solrIDs) == 0 {
+        return []SearchTrack{}, nextCursor, nil
+    }
 
-    return tracks, total, err
+    tracks := []SearchTrack{}
+    err = r.db.SelectContext(
+        ctx,
+        &tracks,
+        `
+        SELECT track_id, title, artists, image_small, preview_url
+        FROM tracks
+        WHERE track_id = ANY($1)
+        `,
+        pq.Array(solrIDs),
+    )
+    if err != nil {
+        return nil, "", err
+    }
+
+    reorderTracks(tracks, solrIDs)
+    return tracks, nextCursor, err
+}
+
+func reorderTracks(tracks []SearchTrack, solrIDs []string) {
+    order := make(map[string]int, len(solrIDs))
+    for i, id := range solrIDs {
+        order[id] = i
+    }
+
+    sort.SliceStable(tracks, func(i, j int) bool {
+        return order[tracks[i].ID] < order[tracks[j].ID]
+    })
 }
 
 func (r *Repository) GetPopularTracks(ctx context.Context, limit int) ([]Track, error) {

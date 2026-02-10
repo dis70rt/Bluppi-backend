@@ -31,22 +31,21 @@ func (h *GrpcHandler) GetTrack(ctx context.Context, req *pb.GetTrackRequest) (*p
 // --- Search & Discovery ---
 
 func (h *GrpcHandler) SearchTracks(ctx context.Context, req *pb.SearchTracksRequest) (*pb.SearchTracksResponse, error) {
-    tracks, total, err := h.service.SearchTracks(ctx, req.Query, int(req.Limit), int(req.Offset))
+    tracks, next_cursor, err := h.service.SearchTracks(ctx, req.Query, int(req.Limit), req.Cursor)
     if err != nil {
         return nil, h.mapError(err)
     }
 
-    pbTracks := make([]*pb.Track, len(tracks))
+    pbTracks := make([]*pb.SearchTrack, len(tracks))
     for i := range tracks {
-        pbTracks[i] = h.mapTrackToProto(&tracks[i])
+        pbTracks[i] = h.mapSearchTrackToProto(&tracks[i])
     }
 
     return &pb.SearchTracksResponse{
         Tracks: pbTracks,
-        Total:  int64(total),
         Query:  req.Query,
         Limit:  req.Limit,
-        Offset: req.Offset,
+        NextCursor: next_cursor,
     }, nil
 }
 

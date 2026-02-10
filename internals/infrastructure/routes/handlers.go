@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"os"
+
+	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
 	"github.com/dis70rt/bluppi-backend/internals/music"
 	"github.com/dis70rt/bluppi-backend/internals/users"
 	"github.com/jmoiron/sqlx"
@@ -19,7 +22,8 @@ func BuildHandlers(db *sqlx.DB) *Handlers {
 	userHandler := users.NewGrpcHandler(userService)
 
 	// --- Tracks Modules ---
-	trackRepo := music.NewRepository(db)
+	solr := database.NewSolrClient(os.Getenv("SOLR_URL"))
+	trackRepo := music.NewRepository(db, solr)
 	trackService := music.NewService(trackRepo)
 	trackHandler := music.NewGrpcHandler(trackService)
 

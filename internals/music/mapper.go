@@ -95,6 +95,19 @@ func (h *GrpcHandler) mapError(err error) error {
     }
 }
 
+func (h *GrpcHandler) mapSearchTrackToProto(t *SearchTrack) *pb.SearchTrack {
+    if t == nil {
+        return nil
+    }
+    return &pb.SearchTrack{
+        Id:         t.ID,
+        Title:      t.Title,
+        Artist:     t.Artists, // Map to 'artist' field in proto
+        ImageSmall: ptrToString(t.ImageSmall),
+        PreviewUrl: ptrToString(t.PreviewURL),
+    }
+}
+
 // ----------------- Helper Functions -----------------
 
 func ptrToString(s *string) string {

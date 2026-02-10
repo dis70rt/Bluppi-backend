@@ -52,12 +52,12 @@ message Track {
   google.protobuf.Timestamp created_at = 14;
 }
 
-message TrackSummary {
+message SearchTrack {
   string id = 1;
   string title = 2;
   string artist = 3;
   string image_small = 5;
-  int32 duration_ms = 6;
+  string preview_url = 6;
 }
 
 message TrackResponse {
@@ -73,15 +73,14 @@ message GetTrackRequest {
 message SearchTracksRequest {
   string query = 1;
   int32 limit = 2;
-  int32 offset = 3;
+  string cursor = 3;
 }
 
 message SearchTracksResponse {
-  repeated Track tracks = 1;
-  int64 total = 2;
-  string query = 3;
-  int32 limit = 4;
-  int32 offset = 5;
+  repeated SearchTrack tracks = 1;
+  string query = 2;
+  int32 limit = 3;
+  string next_cursor = 4;
 }
 
 message GetPopularTracksRequest {

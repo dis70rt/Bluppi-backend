@@ -45,17 +45,15 @@ func (s *Service) GetTrack(ctx context.Context, id string) (*Track, error) {
 func (s *Service) SearchTracks(
     ctx context.Context,
     query string,
-    limit, offset int,
-) ([]Track, int, error) {
+    limit int,
+    cursor string,
+) ([]SearchTrack, string, error) {
 
     if limit <= 0 || limit > 100 {
         limit = 20
     }
-    if offset < 0 {
-        offset = 0
-    }
 
-    return s.repo.SearchTracks(ctx, query, limit, offset)
+    return s.repo.SearchTracks(ctx, query, limit, cursor)
 }
 
 func (s *Service) GetPopularTracks(ctx context.Context, limit int) ([]Track, error) {
