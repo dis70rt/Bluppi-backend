@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+yt-dlp
+redis
+psycopg[binary]
+psycopg_pool

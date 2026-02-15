@@ -44,39 +44,30 @@ services:
     networks:
       - cloudflared      
   
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: bluppi-redis
-  #   networks:
-  #     - cloudflared
-  #   ports:
-  #     - "${REDIS_PORT}:6379"
-  # api:
-  #   build: .
-  #   container_name: bluppi-api
-  #   command: [
-  #     ".venv/bin/uvicorn",
-  #     "app.server:app",
-  #     "--host", "0.0.0.0",
-  #     "--port", "8000"
-  #   ]
-  #   volumes:
-  #     - ./app:/workspace/app
-  #   environment:
-  #     DB_HOST: postgres
-  #     DB_USER: ${DB_USER}
-  #     DB_PASSWORD: ${DB_PASSWORD}
-  #     DB_NAME: ${DB_NAME}
-  #     DB_PORT: ${DB_PORT}
-  #     CHAT_DB_NAME: ${CHAT_DB_NAME}
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: ${REDIS_PORT}
-  #     REDIS_DB: ${REDIS_DB}
-  #     WS_HOST: postgres
-  #     WS_PORT: ${WS_PORT}
-  #     GEMINI_API_KEY: ${GEMINI_API_KEY}
-  #   networks:
-  #     - cloudflared
+  redis:
+    image: redis:7-alpine
+    container_name: bluppi-redis
+    networks:
+      - cloudflared
+    ports:
+      - "${REDIS_PORT}:6379"
+
+  audio-api:
+    build:
+      context: ./audio
+      dockerfile: Dockerfile
+    container_name: bluppi-audio-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"
+    networks:
+      - cloudflared
+
 
   # ws1:
   #   build: .

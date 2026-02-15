@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+COMPOSE_FILE="/home/dis70rt/Projects/Bluppi/bluppi-backend-v2/docker-compose.yml"
+
+case "$1" in
+  up) docker compose -f "$COMPOSE_FILE" up ;;
+  down) docker compose -f "$COMPOSE_FILE" down ;;
+  build) docker compose -f "$COMPOSE_FILE" up --build ;;
+  logs) docker compose -f "$COMPOSE_FILE" logs -f ;;
+  ps) docker compose -f "$COMPOSE_FILE" ps ;;
+  restart) docker compose -f "$COMPOSE_FILE" restart ;;
+  clean) docker compose -f "$COMPOSE_FILE" down -v --remove-orphans ;;
+  *) echo "Usage: bluppi {up|down|build|logs|ps|restart|clean}" ;;
+esac
