@@ -4,3 +4,4 @@ yt-dlp
 redis
 psycopg[binary]
 psycopg_pool
+ytmusicapi

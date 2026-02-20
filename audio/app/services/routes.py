@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.services.youtube import YouTubeDLP
+from app.services.youtube import YouTubeService
 from app.schema import SearchResponse, AudioResponse
 from app.core.redis import redis_client
 from app.core.psql import PSQL
@@ -16,13 +16,11 @@ def search(artist: str, title: str, track_id: str):
         video_id, audio_url = cached.split("|")
         return SearchResponse(video_id=video_id, audio_url=audio_url)
 
-    query = f"{artist} - {title} audio"
-
-    vid = YouTubeDLP.search_video_id(query)
+    vid = YouTubeService.search_video_id(title, artist)
     if not vid:
         raise HTTPException(status_code=404, detail="Video not found")
 
-    audio_url = YouTubeDLP.get_audio_url(vid)
+    audio_url = YouTubeService.get_audio_url(vid)
 
     if not audio_url:
         raise HTTPException(status_code=404, detail="Audio not available")
@@ -40,7 +38,7 @@ def audio(video_id: str):
     if cached:
         return AudioResponse(video_id=video_id, audio_url=cached)
     
-    url = YouTubeDLP.get_audio_url(video_id)
+    url = YouTubeService.get_audio_url(video_id)
 
     if not url:
         raise HTTPException(status_code=404, detail="Audio not available")
