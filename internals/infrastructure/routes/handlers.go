@@ -5,6 +5,7 @@ import (
 
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
 	"github.com/dis70rt/bluppi-backend/internals/music"
+	"github.com/dis70rt/bluppi-backend/internals/party"
 	"github.com/dis70rt/bluppi-backend/internals/users"
 	"github.com/jmoiron/sqlx"
 )
@@ -12,6 +13,7 @@ import (
 type Handlers struct {
 	UserHandler *users.GrpcHandler
 	TrackHandler *music.GrpcHandler
+	PartyHandler *party.GrpcHandler
 	// ChatHandler *chat.GrpcHandler
 }
 
@@ -27,12 +29,17 @@ func BuildHandlers(db *sqlx.DB) *Handlers {
 	trackService := music.NewService(trackRepo)
 	trackHandler := music.NewGrpcHandler(trackService)
 
+	// --- Party Module ---
+	partyService := party.NewService()
+	partyHandler := party.NewGrpcHandler(partyService)
+
 	// --- Future Modules ---
 	// chatRepo := chat.NewRepository(db)
 
 	return &Handlers{
 		UserHandler: userHandler,
 		TrackHandler: trackHandler,
+		PartyHandler: partyHandler,
 		// ChatHandler: chatHandler,
 	}
 }

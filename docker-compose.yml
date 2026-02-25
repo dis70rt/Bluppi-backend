@@ -16,6 +16,16 @@ services:
 
     networks:
       - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
   
   bluppi-api:
     build:
@@ -42,7 +52,12 @@ services:
     environment:
       SOLR_JAVA_MEM: "-Xms2g -Xmx4g"
     networks:
-      - cloudflared      
+      - cloudflared
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3" 
   
   redis:
     image: redis:7-alpine
@@ -51,6 +66,11 @@ services:
       - cloudflared
     ports:
       - "${REDIS_PORT}:6379"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
 
   audio-api:
     build:

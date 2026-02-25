@@ -1,0 +1,20 @@
+syntax = "proto3";
+package ListeningParty;
+
+option go_package = "./internals/gen/party";
+
+
+// Service
+service SyncService {
+    // 
+  rpc ClockSync(SyncRequest) returns (SyncResponse);
+}
+
+message SyncRequest {
+    int64 client_send_us = 1;
+}
+
+message SyncResponse {
+  int64 server_receive_us = 1;
+  int64 server_send_us = 2;
+}
