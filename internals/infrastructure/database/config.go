@@ -1,7 +1,10 @@
 package database
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -39,4 +42,24 @@ func LoadConfig() Config {
 		MaxConnLifetime: mustDuration("DB_MAX_CONN_LIFETIME", time.Hour),
 		MaxConnIdleTime: mustDuration("DB_MAX_CONN_IDLE_TIME", 30*time.Minute),
 	}
+}
+
+func LoadRedisConfig() RedisConfig {
+    host := getEnv("REDIS_HOST", "localhost")
+    port := getEnv("REDIS_PORT", "6379")
+    
+    dbInt, _ := strconv.Atoi(getEnv("REDIS_DB", "0"))
+
+    return RedisConfig{
+        Addr:     fmt.Sprintf("%s:%s", host, port),
+        Password: getEnv("REDIS_PASSWORD", ""),
+        DB:       dbInt,
+    }
+}
+
+func getEnv(key, fallback string) string {
+    if value, exists := os.LookupEnv(key); exists {
+        return value
+    }
+    return fallback
 }

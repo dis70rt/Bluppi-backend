@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package room;
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+option go_package = "./internals/gen/rooms";
+
+service RoomService {
+    rpc CreateRoom(CreateRoomRequest) returns (Room);
+    rpc GetRoom(GetRoomRequest) returns (Room);
+    // rpc DeleteRoom(DeleteRoomRequest) returns (google.protobuf.Empty);
+
+    // rpc ListRooms(ListRoomsRequest) returns (ListRoomsResponse);
+    // rpc SearchRooms(SearchRoomsRequest) returns (SearchRoomsResponse);
+
+    rpc JoinRoom(JoinRoomRequest) returns (google.protobuf.Empty);
+    rpc LeaveRoom(LeaveRoomRequest) returns (google.protobuf.Empty);
+
+    rpc SubscribeToRoomEvents(SubscribeRequest) returns (stream RoomEvent);
+}
+
+enum RoomStatus {
+    ROOM_STATUS_UNSPECIFIED = 0;
+    ROOM_STATUS_ACTIVE = 1;
+    ROOM_STATUS_ENDED = 2;
+}
+
+enum RoomVisibility {
+    ROOM_VISIBILITY_UNSPECIFIED = 0;
+    ROOM_VISIBILITY_PUBLIC = 1;
+    ROOM_VISIBILITY_PRIVATE = 2;
+}
+
+enum RoomMemberRole {
+    ROOM_MEMBER_ROLE_UNSPECIFIED = 0;
+    ROOM_MEMBER_ROLE_HOST = 1;
+    ROOM_MEMBER_ROLE_LISTENER = 2;
+}
+
+enum RoomEventType {
+    ROOM_EVENT_TYPE_UNSPECIFIED = 0;
+    ROOM_EVENT_TYPE_USER_JOINED = 1;
+    ROOM_EVENT_TYPE_USER_LEFT = 2;
+    ROOM_EVENT_TYPE_ROOM_ENDED = 3;
+}
+
+message Room {
+    string id = 1;
+    string name = 2;
+    string code = 3;
+
+    RoomStatus status = 4;
+    RoomVisibility visibility = 5;
+
+    string host_user_id = 6;
+
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+}
+
+message RoomMember {
+    string room_id = 1;
+    string user_id = 2;
+    RoomMemberRole role = 3;
+
+    google.protobuf.Timestamp joined_at = 4;
+    google.protobuf.Timestamp left_at = 5;
+}
+
+message RoomSummary {
+    string room_id = 1;
+    string room_name = 2;
+
+    string track_id = 3;
+    string track_title = 4;
+    string track_artist = 5;
+    string artwork_url = 6;
+
+    string host_user_id = 7;
+    string host_display_name = 8;
+
+    int32 listener_count = 9;
+
+    bool is_live = 10;
+    RoomVisibility visibility = 11;
+}
+
+message SearchRoomsRequest {
+    string query = 1;
+    RoomVisibility visibility = 2;
+
+    int32 page_size = 3;
+    string page_token = 4;
+}
+
+message SearchRoomsResponse {
+    repeated RoomSummary rooms = 1;
+    string next_page_token = 2;
+}
+
+message CreateRoomRequest {
+    string name = 1;
+    RoomVisibility visibility = 2;
+    bool invite_only = 3;
+    string host_user_id = 4;
+}
+
+message GetRoomRequest {
+    string room_id = 1;
+}
+
+message DeleteRoomRequest {
+    string room_id = 1;
+}
+
+message JoinRoomRequest {
+    oneof identifier {
+        string room_id = 1;
+        string room_code = 2;
+    }
+    string user_id = 3;
+}
+
+message LeaveRoomRequest {
+    string room_id = 1;
+    string user_id = 2;
+}
+
+message ListRoomsRequest {
+    RoomVisibility visibility = 1;
+    int32 page_size = 2;
+    string page_token = 3;
+}
+
+message ListRoomsResponse {
+    repeated RoomSummary rooms = 1;
+    string next_page_token = 2;
+}
+
+message SubscribeRequest {
+    string room_id = 1;
+    string user_id = 2;
+}
+
+message RoomEvent {
+    RoomEventType type = 1;
+    string room_id = 2;
+    int32 listener_count = 3; 
+    string target_user_id = 4; 
+}

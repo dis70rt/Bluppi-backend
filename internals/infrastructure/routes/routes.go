@@ -9,6 +9,7 @@ import (
 	pb_users "github.com/dis70rt/bluppi-backend/internals/gen/users"
 	pb_tracks "github.com/dis70rt/bluppi-backend/internals/gen/tracks"
 	pb_party "github.com/dis70rt/bluppi-backend/internals/gen/party"
+	pb_room "github.com/dis70rt/bluppi-backend/internals/gen/rooms"
 )
 
 func Setup(server *grpc.Server, h *Handlers) {
@@ -30,6 +31,10 @@ func Setup(server *grpc.Server, h *Handlers) {
 
 	if h.PartyHandler != nil {
 		pb_party.RegisterSyncServiceServer(server, h.PartyHandler)
+	}
+
+	if h.RoomHandler != nil {
+		pb_room.RegisterRoomServiceServer(server, h.RoomHandler)
 	}
 	
 	/* if h.ChatHandler != nil {
