@@ -78,12 +78,17 @@ func mapRoomSummaryToProto(s *RoomSummary) *roompb.RoomSummary {
         return nil
     }
     return &roompb.RoomSummary{
-        RoomId:        s.RoomID,
-        RoomName:      s.RoomName,
-        HostUserId:    s.HostUserID,
-        ListenerCount: s.ListenerCount,
-        IsLive:        s.IsLive,
-        Visibility:    mapRoomVisibility(s.Visibility),
+        RoomId:          s.RoomID,
+        RoomName:        s.RoomName,
+        HostUserId:      s.HostUserID,
+        HostDisplayName: s.HostDisplayName,
+        TrackId:         s.TrackID,
+        TrackTitle:      s.TrackTitle,
+        TrackArtist:     s.TrackArtist,
+        ArtworkUrl:      s.ArtworkURL,
+        ListenerCount:   s.ListenerCount,
+        IsLive:          s.IsLive,
+        Visibility:      mapRoomVisibility(s.Visibility),
     }
 }
 

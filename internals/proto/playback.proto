@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package playback;
+option go_package = "./internals/gen/playback";
+//
+service PlaybackService {
+    //
+    rpc StreamSession(stream ClientCommand) returns (stream ServerEvent);
+}
+
+message ClientCommand {
+    string room_id = 1;
+    string user_id = 2;
+
+    oneof payload {
+        PlayCommand play = 3;
+        PauseCommand pause = 4;
+        TrackChangeCommand track_change = 5;
+        BufferReady buffer_ready = 6;
+    }
+}
+
+message PlayCommand {}
+message PauseCommand {}
+message TrackChangeCommand {
+    string track_id = 1;
+    string title = 2;
+    string artist = 3;
+    string audio_url = 4;
+    string artwork_url = 5;
+    int64 duration_ms = 6;
+}
+message BufferReady {
+    uint64 version = 1;
+}
+
+// --- SERVER -> CLIENT ---
+message ServerEvent {
+    oneof payload {
+        PlaybackState playback_state = 1;
+        RoomClosed room_closed = 2;
+    }
+}
+
+message RoomClosed {}
+
+message PlaybackState {
+    TrackInfo track = 1;
+    bool is_playing = 2;
+
+    int64 position_ms = 3;
+    int64 last_update_server_us = 4;
+    int64 scheduled_start_server_us = 5;
+
+    uint64 version = 6;
+}
+
+message TrackInfo {
+    string track_id = 1;
+    string title = 2;
+    string artist = 3;
+    string audio_url = 4;
+    string artwork_url = 5;
+    int64 duration_ms = 6;
+}

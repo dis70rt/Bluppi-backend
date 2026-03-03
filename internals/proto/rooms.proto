@@ -10,13 +10,14 @@ service RoomService {
     rpc GetRoom(GetRoomRequest) returns (Room);
     // rpc DeleteRoom(DeleteRoomRequest) returns (google.protobuf.Empty);
 
-    // rpc ListRooms(ListRoomsRequest) returns (ListRoomsResponse);
+    rpc ListRooms(ListRoomsRequest) returns (ListRoomsResponse);
     // rpc SearchRooms(SearchRoomsRequest) returns (SearchRoomsResponse);
 
     rpc JoinRoom(JoinRoomRequest) returns (google.protobuf.Empty);
     rpc LeaveRoom(LeaveRoomRequest) returns (google.protobuf.Empty);
 
     rpc SubscribeToRoomEvents(SubscribeRequest) returns (stream RoomEvent);
+    rpc GetListeners(GetListenersRequest) returns (GetListenersResponse);
 }
 
 enum RoomStatus {
@@ -42,6 +43,7 @@ enum RoomEventType {
     ROOM_EVENT_TYPE_USER_JOINED = 1;
     ROOM_EVENT_TYPE_USER_LEFT = 2;
     ROOM_EVENT_TYPE_ROOM_ENDED = 3;
+    ROOM_EVENT_TYPE_LIVE_CHAT_MESSAGE = 4;
 }
 
 message Room {
@@ -142,9 +144,35 @@ message SubscribeRequest {
     string user_id = 2;
 }
 
+message GetListenersRequest {
+    string room_id = 1;
+}
+
+message GetListenersResponse {
+    repeated JoinedMember members = 1;
+    int32 total_listeners = 2;
+}
+
+message JoinedMember {
+    string user_id = 1;
+    string username = 2;
+    string display_name = 3;
+    string avatar_url = 4;
+}
+
+message LeftMember {
+    string user_id = 1;
+}
+
+message LiveChatMessage {
+    string user_id = 1;
+    string text = 2;
+}
+
 message RoomEvent {
     RoomEventType type = 1;
-    string room_id = 2;
-    int32 listener_count = 3; 
-    string target_user_id = 4; 
+    string room_id = 2; 
+    JoinedMember joined_member = 3;
+    LeftMember left_member = 4;
+    LiveChatMessage live_chat_message = 5;
 }

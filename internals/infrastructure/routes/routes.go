@@ -10,6 +10,7 @@ import (
 	pb_tracks "github.com/dis70rt/bluppi-backend/internals/gen/tracks"
 	pb_party "github.com/dis70rt/bluppi-backend/internals/gen/party"
 	pb_room "github.com/dis70rt/bluppi-backend/internals/gen/rooms"
+	pb_playback "github.com/dis70rt/bluppi-backend/internals/gen/playback"
 )
 
 func Setup(server *grpc.Server, h *Handlers) {
@@ -35,6 +36,10 @@ func Setup(server *grpc.Server, h *Handlers) {
 
 	if h.RoomHandler != nil {
 		pb_room.RegisterRoomServiceServer(server, h.RoomHandler)
+	}
+
+	if h.PlaybackHandler != nil {
+		pb_playback.RegisterPlaybackServiceServer(server, h.PlaybackHandler)
 	}
 	
 	/* if h.ChatHandler != nil {

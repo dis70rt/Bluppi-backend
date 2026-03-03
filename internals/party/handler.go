@@ -3,6 +3,7 @@ package party
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/party"
 
@@ -99,9 +100,10 @@ func (h *GrpcHandler) SubscribeToRoomEvents(req *roompb.SubscribeRequest, stream
             }
 
             eventType := roompb.RoomEventType_ROOM_EVENT_TYPE_UNSPECIFIED
-            if rawEvent["type"] == "USER_JOINED" {
+            switch rawEvent["type"] {
+            case "USER_JOINED":
                 eventType = roompb.RoomEventType_ROOM_EVENT_TYPE_USER_JOINED
-            } else if rawEvent["type"] == "USER_LEFT" {
+            case "USER_LEFT":
                 eventType = roompb.RoomEventType_ROOM_EVENT_TYPE_USER_LEFT
             }
 
@@ -122,32 +124,41 @@ func (h *GrpcHandler) SubscribeToRoomEvents(req *roompb.SubscribeRequest, stream
     }
 }
 
-// func (h *GrpcHandler) ListRooms(ctx context.Context, req *roompb.ListRoomsRequest) (*roompb.ListRoomsResponse, error) {
-//     // Simple offset-based pagination for now
-//     limit := int(req.PageSize)
-//     if limit <= 0 {
-//         limit = 20
-//     }
-//     offset := 0
-//     // You can implement page_token parsing for real cursor-based paging if needed
+func (h *GrpcHandler) ListRooms(ctx context.Context, req *roompb.ListRoomsRequest) (*roompb.ListRoomsResponse, error) {
+    limit := int64(req.PageSize)
+    if limit <= 0 {
+        limit = 20
+    } else if limit > 50 {
+        limit = 50
+    }
 
-//     summaries, err := h.service.repo.ListRooms(ctx, RoomVisibilityFromProto(req.Visibility), limit, offset)
-//     if err != nil {
-//         return nil, h.mapError(err)
-//     }
-//     return &roompb.ListRoomsResponse{
-//         Rooms: mapRoomSummariesToProto(summaries),
-//         NextPageToken: "",
-//     }, nil
-// }
+    offset := int64(0)
+    if req.PageToken != "" {
+        parsed, err := strconv.ParseInt(req.PageToken, 10, 64)
+        if err == nil {
+            offset = parsed
+        }
+    }
 
-// func (h *GrpcHandler) SearchRooms(ctx context.Context, req *roompb.SearchRoomsRequest) (*roompb.SearchRoomsResponse, error) {
-//     return &roompb.SearchRoomsResponse{
-//         Rooms: []*roompb.RoomSummary{},
-//         NextPageToken: "",
-//     }, nil
-// }
-// --- Error Mapping ---
+    summaries, nextOffset, err := h.service.ListActiveRooms(ctx, limit, offset)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+    nextToken := ""
+    if nextOffset > 0 {
+        nextToken = strconv.FormatInt(nextOffset, 10)
+    }
+
+    return &roompb.ListRoomsResponse{
+        Rooms:         mapRoomSummariesToProto(summaries),
+        NextPageToken: nextToken,
+    }, nil
+}
+
+func (h *GrpcHandler) GetListeners() (*roompb.GetListenersResponse) {
+    
+}
 
 func (h *GrpcHandler) mapError(err error) error {
     switch err {
@@ -165,8 +176,6 @@ func (h *GrpcHandler) mapError(err error) error {
         return status.Error(codes.Internal, err.Error())
     }
 }
-
-// --- Proto Enum Conversion ---
 
 func RoomVisibilityFromProto(v roompb.RoomVisibility) RoomVisibility {
     switch v {

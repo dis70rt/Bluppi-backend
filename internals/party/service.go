@@ -3,6 +3,7 @@ package party
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -81,6 +82,25 @@ func (s *Service) CreateRoom(
             _ = s.redisRepo.SetRoomHost(ctx, room.ID, hostUserID)
             _ = s.redisRepo.RecordHeartbeat(ctx, room.ID)
             _ = s.redisRepo.AddMember(ctx, room.ID, hostUserID)
+
+            if visibility == RoomVisibilityPublic {
+                fmt.Println("Match! Attempting to write to Redis Lobby...")
+                errLobby := s.redisRepo.PublishToLobby(ctx, &RoomSummary{
+                    RoomID:          room.ID,
+                    RoomName:        name,
+                    HostUserID:      hostUserID,
+                    HostDisplayName: "Host", // Pass actual display name
+                    Visibility:      visibility,
+                    // Note: Track info will be empty until plays a song
+                })
+
+                if errLobby != nil {
+                    fmt.Println("REDIS PIPELINE ERROR:", errLobby)
+                } else {
+                    fmt.Println("Successfully written to Redis Lobby!")
+                }
+            }
+
             return room, nil
         }
         if isUniqueViolation(err) {
@@ -141,6 +161,10 @@ func (s *Service) JoinRoom(ctx context.Context, roomID, userID string) error {
 
     count, _ := s.redisRepo.GetMemberCount(ctx, roomID)
 
+    if room.Visibility == RoomVisibilityPublic {
+        _ = s.redisRepo.SetLobbyCount(ctx, roomID, count)
+    }
+
     event := map[string]interface{}{
         "type":           "USER_JOINED",
         "listener_count": count,
@@ -167,6 +191,7 @@ func (s *Service) LeaveRoom(ctx context.Context, roomID, userID string) error {
     err := s.redisRepo.RemoveMember(ctx, roomID, userID)
 
     count, _ := s.redisRepo.GetMemberCount(ctx, roomID)
+    _ = s.redisRepo.SetLobbyCount(ctx, roomID, count)
     
     event := map[string]interface{}{
         "type":           "USER_LEFT",
@@ -175,6 +200,20 @@ func (s *Service) LeaveRoom(ctx context.Context, roomID, userID string) error {
     }
     _ = s.redisRepo.PublishRoomEvent(ctx, roomID, event)
     return err
+}
+
+func (s *Service) ListActiveRooms(ctx context.Context, limit, offset int64) ([]RoomSummary, int64, error) {
+    summaries, err := s.redisRepo.GetLobbyFeed(ctx, limit, offset)
+    if err != nil {
+        return nil, 0, err
+    }
+
+    nextOffset := int64(0)
+    if int64(len(summaries)) == limit {
+        nextOffset = offset + limit
+    }
+
+    return summaries, nextOffset, nil
 }
 
 func isUniqueViolation(err error) bool {

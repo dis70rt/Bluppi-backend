@@ -7,6 +7,7 @@ import (
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
 	"github.com/dis70rt/bluppi-backend/internals/music"
 	"github.com/dis70rt/bluppi-backend/internals/party"
+	"github.com/dis70rt/bluppi-backend/internals/playback"
 	"github.com/dis70rt/bluppi-backend/internals/users"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
@@ -17,6 +18,7 @@ type Handlers struct {
 	TrackHandler *music.GrpcHandler
 	PartyHandler *party.GrpcHandler
 	RoomHandler *party.GrpcHandler
+	PlaybackHandler *playback.PlaybackHandler
 	// ChatHandler *chat.GrpcHandler
 }
 
@@ -42,6 +44,9 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client) *Handl
 	partyReaper := party.NewReaper(partyRepo, partyRedis);
 	go partyReaper.Start(ctx)
 
+	roomManager := playback.NewRoomManager()
+	playbackHandler := playback.NewPlaybackHandler(roomManager)
+
 	// --- Future Modules ---
 	// chatRepo := chat.NewRepository(db)
 
@@ -50,6 +55,7 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client) *Handl
 		TrackHandler: trackHandler,
 		PartyHandler: partyHandler,
 		RoomHandler: roomHandler,
+		PlaybackHandler: playbackHandler,
 		// ChatHandler: chatHandler,
 	}
 }
