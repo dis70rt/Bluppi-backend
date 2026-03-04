@@ -94,3 +94,38 @@ func (r *Repository) GetRoom(ctx context.Context, roomID string) (*Room, error) 
 
 	return &room, err
 }
+
+func (r *Repository) GetListeners(ctx context.Context, userIDs []string) ([]ListenerInfo, error) {
+    if len(userIDs) == 0 {
+        return []ListenerInfo{}, nil
+    }
+
+    query, args, err := sqlx.In(`
+        SELECT id, username, name, profile_pic
+        FROM users
+        WHERE id IN (?)
+    `, userIDs)
+    if err != nil {
+        return nil, err
+    }
+    query = r.db.Rebind(query)
+
+    var listeners []ListenerInfo
+    if err := r.db.SelectContext(ctx, &listeners, query, args...); err != nil {
+        return nil, err
+    }
+    return listeners, nil
+}
+
+func (r *Repository) GetUserSkinnyInfo(ctx context.Context, userID string) (*ListenerInfo, error) {
+	var listener ListenerInfo
+    err := r.db.GetContext(ctx, &listener, `
+        SELECT id AS id, username, name, profile_pic
+        FROM users
+        WHERE id = $1
+    `, userID)
+    if err != nil {
+        return nil, err
+    }
+    return &listener, nil
+}

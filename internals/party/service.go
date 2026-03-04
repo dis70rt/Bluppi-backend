@@ -154,6 +154,11 @@ func (s *Service) JoinRoom(ctx context.Context, roomID, userID string) error {
         return ErrRoomNotFound 
     }
 
+    user, err := s.repo.GetUserSkinnyInfo(ctx, userID)
+    if err != nil {
+        return err
+    }
+
     err = s.redisRepo.AddMember(ctx, roomID, userID)
     if err != nil {
         return err
@@ -167,8 +172,11 @@ func (s *Service) JoinRoom(ctx context.Context, roomID, userID string) error {
 
     event := map[string]interface{}{
         "type":           "USER_JOINED",
+        "user_id": user.UserID,
+        "username": user.Username,
+        "display_name": user.DisplayName,
+        "avatar_url": user.AvatarURL,
         "listener_count": count,
-        "target_user_id": userID,
     }
     _ = s.redisRepo.PublishRoomEvent(ctx, roomID, event)
 
@@ -214,6 +222,46 @@ func (s *Service) ListActiveRooms(ctx context.Context, limit, offset int64) ([]R
     }
 
     return summaries, nextOffset, nil
+}
+
+func (s *Service) GetListeners(ctx context.Context, roomID string) ([]ListenerInfo, error) {
+    userIDs, err := s.redisRepo.client.SMembers(ctx, roomMembersKey(roomID)).Result()
+    if err != nil {
+        return nil, err
+    }
+    if len(userIDs) == 0 {
+        return []ListenerInfo{}, nil
+    }
+
+    users, err := s.repo.GetListeners(ctx, userIDs)
+    if err != nil {
+        return nil, err
+    }
+
+    listeners := make([]ListenerInfo, 0, len(users))
+    for _, u := range users {
+        listeners = append(listeners, ListenerInfo{
+            UserID:      u.UserID,
+            Username:    u.Username,
+            DisplayName: u.DisplayName,
+            AvatarURL:   u.AvatarURL,
+        })
+    }
+    return listeners, nil
+}
+
+func (s *Service) SendLiveChatMessage(ctx context.Context, roomID, userID, text string) error {
+    if roomID == "" || userID == "" || text == "" {
+        return ErrInvalidInput
+    }
+
+    event := map[string]interface{}{
+        "type":    "LIVE_CHAT_MESSAGE",
+        "user_id": userID,
+        "text": text,
+    }
+
+    return s.redisRepo.PublishRoomEvent(ctx, roomID, event)
 }
 
 func isUniqueViolation(err error) bool {

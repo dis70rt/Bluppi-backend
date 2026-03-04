@@ -37,15 +37,6 @@ type RoomMember struct {
 	LeftAt   *time.Time      `db:"left_at"`
 }
 
-// type RoomSummary struct {
-// 	RoomID        string         `db:"room_id"`
-// 	RoomName      string         `db:"room_name"`
-// 	HostUserID    string         `db:"host_user_id"`
-// 	ListenerCount int32          `db:"listener_count"`
-// 	IsLive        bool           `db:"is_live"`
-// 	Visibility    RoomVisibility `db:"visibility"`
-// }
-
 type RoomSummary struct {
     RoomID          string
     RoomName        string
@@ -58,4 +49,11 @@ type RoomSummary struct {
     ListenerCount   int32
     IsLive          bool
     Visibility      RoomVisibility // Your internal enum
+}
+
+type ListenerInfo struct {
+    UserID      string `db:"id"`
+    Username    string `db:"username"`
+    DisplayName string `db:"name"`
+    AvatarURL   string `db:"profile_pic"`
 }
