@@ -4,6 +4,7 @@ import (
 	"context"
 
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/users"
+	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
 	"github.com/dis70rt/bluppi-backend/internals/utils"
 )
 
@@ -86,12 +87,17 @@ func (h *GrpcHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 		fields["favorite_genres"] = req.FavoriteGenres
 	}
 
-	err := h.service.UpdateUser(ctx, req.UserId, fields)
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+	err = h.service.UpdateUser(ctx, userID, fields)
 	if err != nil {
 		return nil, h.mapError(err)
 	}
 
-	user, err := h.service.GetUserByID(ctx, req.UserId)
+	user, err := h.service.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -102,7 +108,12 @@ func (h *GrpcHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 }
 
 func (h *GrpcHandler) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
-	err := h.service.DeleteUser(ctx, req.UserId)
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, err
+    }
+	
+	err = h.service.DeleteUser(ctx, userID)
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -187,7 +198,12 @@ func (h *GrpcHandler) AddRecentSearch(ctx context.Context, req *pb.AddRecentSear
 }
 
 func (h *GrpcHandler) GetRecentSearches(ctx context.Context, req *pb.GetRecentSearchesRequest) (*pb.RecentSearchesResponse, error) {
-	searches, err := h.service.GetRecentSearches(ctx, req.UserId, int(req.Limit))
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, err
+    }
+	
+	searches, err := h.service.GetRecentSearches(ctx, userID, int(req.Limit))
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -203,7 +219,12 @@ func (h *GrpcHandler) GetRecentSearches(ctx context.Context, req *pb.GetRecentSe
 }
 
 func (h *GrpcHandler) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.StatusResponse, error) {
-	err := h.service.Follow(ctx, req.FollowerId, req.FolloweeId)
+	followerID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, err
+    }
+	
+	err = h.service.Follow(ctx, followerID, req.FolloweeId)
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -215,7 +236,12 @@ func (h *GrpcHandler) FollowUser(ctx context.Context, req *pb.FollowUserRequest)
 }
 
 func (h *GrpcHandler) UnfollowUser(ctx context.Context, req *pb.UnfollowUserRequest) (*pb.StatusResponse, error) {
-	err := h.service.Unfollow(ctx, req.FollowerId, req.FolloweeId)
+	followerID, err := middlewares.GetUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	err = h.service.Unfollow(ctx, followerID, req.FolloweeId)
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -261,7 +287,12 @@ func (h *GrpcHandler) GetFollowing(ctx context.Context, req *pb.GetFollowingRequ
 }
 
 func (h *GrpcHandler) IsFollowing(ctx context.Context, req *pb.IsFollowingRequest) (*pb.IsFollowingResponse, error) {
-	isFollowing, err := h.service.IsFollowing(ctx, req.FollowerId, req.FolloweeId)
+	followerID, err := middlewares.GetUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	isFollowing, err := h.service.IsFollowing(ctx, followerID, req.FolloweeId)
 	if err != nil {
 		return nil, h.mapError(err)
 	}

@@ -10,7 +10,7 @@ service PlaybackService {
 
 message ClientCommand {
     string room_id = 1;
-    string user_id = 2;
+    // string user_id = 2;
 
     oneof payload {
         PlayCommand play = 3;

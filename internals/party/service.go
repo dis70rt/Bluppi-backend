@@ -204,7 +204,7 @@ func (s *Service) LeaveRoom(ctx context.Context, roomID, userID string) error {
     event := map[string]interface{}{
         "type":           "USER_LEFT",
         "listener_count": count,
-        "target_user_id": userID,
+        "user_id": userID,
     }
     _ = s.redisRepo.PublishRoomEvent(ctx, roomID, event)
     return err

@@ -6,6 +6,9 @@ import (
 	"log"
 
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/playback"
+	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type PlaybackHandler struct {
@@ -30,7 +33,11 @@ func (h *PlaybackHandler) StreamSession(stream pb.PlaybackService_StreamSessionS
 	}
 
 	roomID := firstCmd.RoomId
-	userID := firstCmd.UserId
+	
+	userID, err := middlewares.GetUserID(stream.Context())
+    if err != nil {
+        return status.Error(codes.Unauthenticated, "user not authenticated")
+    }
 
 	if roomID == "" || userID == "" {
 		return fmt.Errorf("initial command missing room_id or user_id")
@@ -61,7 +68,7 @@ func (h *PlaybackHandler) StreamSession(stream pb.PlaybackService_StreamSessionS
 		}
 	}()
 
-	h.processCommand(room, firstCmd)
+	h.processCommand(room, userID, firstCmd)
 
 	for {
 		cmd, err := stream.Recv()
@@ -74,13 +81,13 @@ func (h *PlaybackHandler) StreamSession(stream pb.PlaybackService_StreamSessionS
 			break
 		}
 
-		h.processCommand(room, cmd)
+		h.processCommand(room, userID, cmd)
 	}
 
 	return nil
 }
 
-func (h *PlaybackHandler) processCommand(room *RoomState, cmd *pb.ClientCommand) {
+func (h *PlaybackHandler) processCommand(room *RoomState, userID string, cmd *pb.ClientCommand) {
 	log.Printf("📥 [gRPC] Received command for room %s | Payload Type: %T", room.ID, cmd.Payload)
 	switch payload := cmd.Payload.(type) {
 
@@ -89,8 +96,8 @@ func (h *PlaybackHandler) processCommand(room *RoomState, cmd *pb.ClientCommand)
 		room.HandleTrackChange(payload.TrackChange)
 
 	case *pb.ClientCommand_BufferReady:
-		log.Printf("✅ [gRPC] User %s Buffer Ready (v%d)", cmd.UserId, payload.BufferReady.Version)
-		room.HandleBufferReady(cmd.UserId, payload.BufferReady.Version)
+		log.Printf("✅ [gRPC] User %s Buffer Ready (v%d)", userID, payload.BufferReady.Version)
+		room.HandleBufferReady(userID, payload.BufferReady.Version)
 
 	case *pb.ClientCommand_Play:
 		log.Printf("▶️ [gRPC] Play Command")

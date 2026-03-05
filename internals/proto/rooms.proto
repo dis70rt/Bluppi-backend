@@ -105,7 +105,7 @@ message CreateRoomRequest {
     string name = 1;
     RoomVisibility visibility = 2;
     bool invite_only = 3;
-    string host_user_id = 4;
+    // string host_user_id = 4;
 }
 
 message GetRoomRequest {
@@ -121,12 +121,12 @@ message JoinRoomRequest {
         string room_id = 1;
         string room_code = 2;
     }
-    string user_id = 3;
+    // string user_id = 3;
 }
 
 message LeaveRoomRequest {
     string room_id = 1;
-    string user_id = 2;
+    // string user_id = 2;
 }
 
 message ListRoomsRequest {
@@ -142,7 +142,7 @@ message ListRoomsResponse {
 
 message SubscribeRequest {
     string room_id = 1;
-    string user_id = 2;
+    // string user_id = 2;
 }
 
 message GetListenersRequest {
@@ -180,6 +180,6 @@ message RoomEvent {
 
 message SendLiveChatMessageRequest {
     string room_id = 1;
-    string user_id = 2;
+    // string user_id = 2;
     string text = 3;
 }

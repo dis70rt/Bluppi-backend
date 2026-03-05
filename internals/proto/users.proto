@@ -84,7 +84,7 @@ message GetUserByUsernameRequest {
 }
 
 message UpdateUserRequest {
-  string user_id = 1;
+  // string user_id = 1;
   // mimicking PATCH behavior
   optional string email = 2;
   optional string name = 3;
@@ -98,7 +98,7 @@ message UpdateUserRequest {
 }
 
 message DeleteUserRequest {
-  string user_id = 1;
+  // string user_id = 1;
 }
 
 message DeleteUserResponse {
@@ -157,7 +157,7 @@ message AddRecentSearchRequest {
 }
 
 message GetRecentSearchesRequest {
-  string user_id = 1;
+  // string user_id = 1;
   int32 limit = 2;
 }
 
@@ -171,17 +171,17 @@ message RecentSearchesResponse {
 }
 
 message FollowUserRequest {
-  string follower_id = 1;
+  // string follower_id = 1;
   string followee_id = 2;
 }
 
 message UnfollowUserRequest {
-  string follower_id = 1;
+  // string follower_id = 1;
   string followee_id = 2;
 }
 
 message IsFollowingRequest {
-  string follower_id = 1;
+  // string follower_id = 1;
   string followee_id = 2;
 }
 

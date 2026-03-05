@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/party"
+	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
 
 	roompb "github.com/dis70rt/bluppi-backend/internals/gen/rooms"
 	"google.golang.org/grpc/codes"
@@ -24,9 +25,14 @@ func NewGrpcHandler(s *Service) *GrpcHandler {
 }
 
 func (h *GrpcHandler) ClockSync(ctx context.Context, req *pb.SyncRequest) (*pb.SyncResponse, error) {
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
 	go func(roomID, userID string) {
 		_ = h.service.RecordHeartbeat(context.Background(), roomID, userID)
-	}(req.RoomId, req.UserId)
+	}(req.RoomId, userID)
 
 	return &pb.SyncResponse{
 		ServerReceiveUs: CaptureServerReceiveUs(),
@@ -35,12 +41,17 @@ func (h *GrpcHandler) ClockSync(ctx context.Context, req *pb.SyncRequest) (*pb.S
 }
 
 func (h *GrpcHandler) CreateRoom(ctx context.Context, req *roompb.CreateRoomRequest) (*roompb.Room, error) {
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+	
 	room, err := h.service.CreateRoom(
 		ctx,
 		req.Name,
 		RoomVisibilityFromProto(req.Visibility),
 		req.InviteOnly,
-		req.HostUserId,
+		userID,
 	)
 	if err != nil {
 		return nil, h.mapError(err)
@@ -66,14 +77,25 @@ func (h *GrpcHandler) JoinRoom(ctx context.Context, req *roompb.JoinRoomRequest)
 	default:
 		return nil, status.Error(codes.InvalidArgument, "no room identifier provided")
 	}
-	if err := h.service.JoinRoom(ctx, roomID, req.UserId); err != nil {
+
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+	if err := h.service.JoinRoom(ctx, roomID, userID); err != nil {
 		return nil, h.mapError(err)
 	}
 	return &emptypb.Empty{}, nil
 }
 
 func (h *GrpcHandler) LeaveRoom(ctx context.Context, req *roompb.LeaveRoomRequest) (*emptypb.Empty, error) {
-	if err := h.service.LeaveRoom(ctx, req.RoomId, req.UserId); err != nil {
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+	
+	if err := h.service.LeaveRoom(ctx, req.RoomId, userID); err != nil {
 		return nil, h.mapError(err)
 	}
 	return &emptypb.Empty{}, nil
@@ -83,6 +105,11 @@ func (h *GrpcHandler) SubscribeToRoomEvents(req *roompb.SubscribeRequest, stream
 	roomID := req.RoomId
 	ctx := stream.Context()
 
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return h.mapError(err)
+    }
+
 	pubsub := h.service.redisRepo.SubscribeToRoom(ctx, roomID)
 	defer pubsub.Close()
 	ch := pubsub.Channel()
@@ -90,7 +117,7 @@ func (h *GrpcHandler) SubscribeToRoomEvents(req *roompb.SubscribeRequest, stream
 	for {
 		select {
 		case <-ctx.Done():
-			_ = h.service.LeaveRoom(context.Background(), roomID, req.UserId)
+			_ = h.service.LeaveRoom(context.Background(), roomID, userID)
 			return nil
 
 		case msg := <-ch:
@@ -205,7 +232,12 @@ func (h *GrpcHandler) GetListeners(ctx context.Context, req *roompb.GetListeners
 }
 
 func (h *GrpcHandler) SendLiveChatMessage(ctx context.Context, req *roompb.SendLiveChatMessageRequest) (*emptypb.Empty, error) {
-	err := h.service.SendLiveChatMessage(ctx, req.RoomId, req.UserId, req.Text)
+	userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+	
+	err = h.service.SendLiveChatMessage(ctx, req.RoomId, userID, req.Text)
 	if err != nil {
 		return nil, h.mapError(err)
 	}

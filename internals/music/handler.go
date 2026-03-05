@@ -1,9 +1,10 @@
 package music
 
 import (
-    "context"
+	"context"
 
-    pb "github.com/dis70rt/bluppi-backend/internals/gen/tracks"
+	pb "github.com/dis70rt/bluppi-backend/internals/gen/tracks"
+	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
 )
 
 type GrpcHandler struct {
@@ -86,7 +87,12 @@ func (h *GrpcHandler) GetTracksByGenre(ctx context.Context, req *pb.GetTracksByG
 // --- User Interactions ---
 
 func (h *GrpcHandler) LikeTrack(ctx context.Context, req *pb.LikeTrackRequest) (*pb.StatusResponse, error) {
-    if err := h.service.LikeTrack(ctx, req.UserId, req.TrackId); err != nil {
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+    if err := h.service.LikeTrack(ctx, userID, req.TrackId); err != nil {
         return nil, h.mapError(err)
     }
 
@@ -97,7 +103,12 @@ func (h *GrpcHandler) LikeTrack(ctx context.Context, req *pb.LikeTrackRequest) (
 }
 
 func (h *GrpcHandler) UnlikeTrack(ctx context.Context, req *pb.UnlikeTrackRequest) (*pb.StatusResponse, error) {
-    if err := h.service.UnlikeTrack(ctx, req.UserId, req.TrackId); err != nil {
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+    
+    if err := h.service.UnlikeTrack(ctx, userID, req.TrackId); err != nil {
         return nil, h.mapError(err)
     }
 
@@ -108,7 +119,12 @@ func (h *GrpcHandler) UnlikeTrack(ctx context.Context, req *pb.UnlikeTrackReques
 }
 
 func (h *GrpcHandler) IsTrackLiked(ctx context.Context, req *pb.IsTrackLikedRequest) (*pb.IsTrackLikedResponse, error) {
-    liked, err := h.service.IsTrackLiked(ctx, req.UserId, req.TrackId)
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+    
+    liked, err := h.service.IsTrackLiked(ctx, userID, req.TrackId)
     if err != nil {
         return nil, h.mapError(err)
     }
@@ -119,7 +135,12 @@ func (h *GrpcHandler) IsTrackLiked(ctx context.Context, req *pb.IsTrackLikedRequ
 }
 
 func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracksRequest) (*pb.GetLikedTracksResponse, error) {
-    entries, total, err := h.service.GetLikedTracks(ctx, req.UserId, int(req.Limit), int(req.Offset))
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+    
+    entries, total, err := h.service.GetLikedTracks(ctx, userID, int(req.Limit), int(req.Offset))
     if err != nil {
         return nil, h.mapError(err)
     }
@@ -138,7 +159,12 @@ func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracks
 // --- History ---
 
 func (h *GrpcHandler) AddTrackToHistory(ctx context.Context, req *pb.AddTrackToHistoryRequest) (*pb.StatusResponse, error) {
-    if err := h.service.AddTrackToHistory(ctx, req.UserId, req.TrackId); err != nil {
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+    
+    if err := h.service.AddTrackToHistory(ctx, userID, req.TrackId); err != nil {
         return nil, h.mapError(err)
     }
 
@@ -149,7 +175,12 @@ func (h *GrpcHandler) AddTrackToHistory(ctx context.Context, req *pb.AddTrackToH
 }
 
 func (h *GrpcHandler) GetTrackHistory(ctx context.Context, req *pb.GetTrackHistoryRequest) (*pb.GetTrackHistoryResponse, error) {
-    entries, total, err := h.service.GetTrackHistory(ctx, req.UserId, int(req.Limit), int(req.Offset))
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+    
+    entries, total, err := h.service.GetTrackHistory(ctx, userID, int(req.Limit), int(req.Offset))
     if err != nil {
         return nil, h.mapError(err)
     }
@@ -166,7 +197,12 @@ func (h *GrpcHandler) GetTrackHistory(ctx context.Context, req *pb.GetTrackHisto
 }
 
 func (h *GrpcHandler) ClearTrackHistory(ctx context.Context, req *pb.ClearTrackHistoryRequest) (*pb.StatusResponse, error) {
-    if err := h.service.ClearTrackHistory(ctx, req.UserId); err != nil {
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+    
+    if err := h.service.ClearTrackHistory(ctx, userID); err != nil {
         return nil, h.mapError(err)
     }
 

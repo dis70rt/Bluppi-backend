@@ -13,7 +13,7 @@ service SyncService {
 message SyncRequest {
     int64 client_send_us = 1;
     string room_id = 2;
-    string user_id = 3;
+    // string user_id = 3;
 }
 
 message SyncResponse {
