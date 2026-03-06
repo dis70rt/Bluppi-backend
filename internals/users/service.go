@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
+	"github.com/dis70rt/bluppi-backend/internals/gen/events"
+	eventbus "github.com/dis70rt/bluppi-backend/internals/infrastructure/eventBus"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -12,15 +16,19 @@ var (
 	ErrInvalidInput       = errors.New("invalid input")
 	ErrAlreadyFollowing   = errors.New("already following user")
 	ErrNotFollowing       = errors.New("not following user")
-	ErrUserExists       = errors.New("user already exists")
+	ErrUserExists         = errors.New("user already exists")
 )
 
 type Service struct {
 	repo *Repository
+	eventBus eventbus.Publisher
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, eventBus eventbus.Publisher) *Service {
+	return &Service{
+		repo: repo,
+		eventBus: eventBus,
+	}
 }
 
 // ----- Core CRUD Operations -----
@@ -146,6 +154,21 @@ func (s *Service) Follow(ctx context.Context, followerID, followeeID string) err
 	}
 
 	err := s.repo.Follow(ctx, followerID, followeeID)
+	if err != nil {
+		return err
+	}
+
+	follower, _ := s.repo.GetUserByID(ctx, followerID)
+	event := &events.UserFollowedEvent{
+		FollowerId: followerID,
+		FollowerName: follower.Name,
+		FollowerAvatar: *follower.ProfilePic,
+		FolloweeId: followeeID,
+		OccurredAt: timestamppb.Now(),
+	}
+
+	_ = s.eventBus.Publish(ctx, eventbus.UserFollowedTopic, event)
+
 	return err
 }
 

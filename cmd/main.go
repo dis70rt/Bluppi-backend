@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
-	firebaseAuth "github.com/dis70rt/bluppi-backend/internals/infrastructure/firebase"
+	firebase "github.com/dis70rt/bluppi-backend/internals/infrastructure/firebase"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/routes"
 )
@@ -37,13 +37,19 @@ func main() {
 	defer redisWrapper.Close()
 	log.Println("Redis connected successfully")
 
-	authClient, err := firebaseAuth.InitAuth()
+	authClient, err := firebase.InitAuth()
 	if err != nil {
 		log.Fatalf("Failed to initialize Firebase: %v", err)
 	}
 	log.Println("Firebase Auth initialized")
 
-	appHandlers := routes.BuildHandlers(ctx, dbWrapper.DB, redisWrapper.Client)
+	fcmClient, err := firebase.InitFCM()
+	if err != nil {
+		log.Fatalf("Failed to initialize Firebase FCM: %v", err)
+	}
+	log.Println("Firebase FCM initialized")
+
+	appHandlers := routes.BuildHandlers(ctx, dbWrapper.DB, redisWrapper.Client, fcmClient)
 
 	port := getEnv("PORT", ":50051")
 	lis, err := net.Listen("tcp", port)

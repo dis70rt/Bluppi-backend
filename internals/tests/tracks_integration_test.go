@@ -27,7 +27,8 @@ func setupMusicTests(t *testing.T, db *sqlx.DB) *MusicTestContext {
     require.NoError(t, err)
 
     userRepo := users.NewRepositoryWithTx(tx)
-    userService := users.NewService(userRepo)
+    bus := &noOpPublisher{}
+    userService := users.NewService(userRepo, bus)
 
     musicRepo := music.NewRepositoryWithTx(tx, nil)
     musicService := music.NewService(musicRepo)

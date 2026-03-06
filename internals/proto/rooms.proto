@@ -19,6 +19,8 @@ service RoomService {
     rpc SubscribeToRoomEvents(SubscribeRequest) returns (stream RoomEvent);
     rpc GetListeners(GetListenersRequest) returns (GetListenersResponse);
     rpc SendLiveChatMessage(SendLiveChatMessageRequest) returns (google.protobuf.Empty);
+
+    rpc InviteUserToRoom(InviteUserRequest) returns (google.protobuf.Empty);
 }
 
 enum RoomStatus {
@@ -182,4 +184,9 @@ message SendLiveChatMessageRequest {
     string room_id = 1;
     // string user_id = 2;
     string text = 3;
+}
+
+message InviteUserRequest {
+    string room_id = 1;
+    string target_user_id = 2;
 }

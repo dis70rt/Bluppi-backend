@@ -4,8 +4,11 @@ import (
 	"context"
 	"os"
 
+	"firebase.google.com/go/v4/messaging"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
+	eventbus "github.com/dis70rt/bluppi-backend/internals/infrastructure/eventBus"
 	"github.com/dis70rt/bluppi-backend/internals/music"
+	"github.com/dis70rt/bluppi-backend/internals/notifications"
 	"github.com/dis70rt/bluppi-backend/internals/party"
 	"github.com/dis70rt/bluppi-backend/internals/playback"
 	"github.com/dis70rt/bluppi-backend/internals/users"
@@ -19,13 +22,16 @@ type Handlers struct {
 	PartyHandler *party.GrpcHandler
 	RoomHandler *party.GrpcHandler
 	PlaybackHandler *playback.PlaybackHandler
+	NotifHandler *notifications.GrpcHandler
 	// ChatHandler *chat.GrpcHandler
 }
 
-func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client) *Handlers {
+func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, fcmClient *messaging.Client) *Handlers {
+	globalBus := eventbus.NewRedisEventBus(redis)
+	
 	// --- Users Module ---
 	userRepo := users.NewRepository(db)
-	userService := users.NewService(userRepo)
+	userService := users.NewService(userRepo, globalBus)
 	userHandler := users.NewGrpcHandler(userService)
 
 	// --- Tracks Modules ---
@@ -37,7 +43,7 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client) *Handl
 	// --- Party Module ---
 	partyRepo := party.NewRepository(db)
 	partyRedis := party.NewRedisRepository(redis)
-	partyService := party.NewService(partyRepo, partyRedis)
+	partyService := party.NewService(partyRepo, partyRedis, globalBus)
 	partyHandler := party.NewGrpcHandler(partyService)
 	roomHandler := party.NewGrpcHandler(partyService)
 
@@ -46,6 +52,14 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client) *Handl
 
 	roomManager := playback.NewRoomManager()
 	playbackHandler := playback.NewPlaybackHandler(roomManager)
+
+	notifRepo := notifications.NewRepository(db)
+	notifService := notifications.NewService(notifRepo)
+	notifHandler := notifications.NewGrpcHandler(notifService)
+
+	fcmSender := notifications.NewFCMSender(fcmClient)
+	notifConsumer := notifications.NewConsumer(notifService, globalBus, fcmSender)
+	go notifConsumer.Start(ctx)
 
 	// --- Future Modules ---
 	// chatRepo := chat.NewRepository(db)
@@ -56,6 +70,7 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client) *Handl
 		PartyHandler: partyHandler,
 		RoomHandler: roomHandler,
 		PlaybackHandler: playbackHandler,
+		NotifHandler: notifHandler,
 		// ChatHandler: chatHandler,
 	}
 }

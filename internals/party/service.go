@@ -7,7 +7,10 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/dis70rt/bluppi-backend/internals/gen/events"
+	eventbus "github.com/dis70rt/bluppi-backend/internals/infrastructure/eventBus"
 	"github.com/lib/pq"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -29,13 +32,15 @@ func CaptureServerSendUs() int64 {
 type Service struct {
     repo *Repository
     redisRepo *RedisRepository
+    eventBus  eventbus.Publisher
 }
 
-func NewService(repo *Repository, redisRepo *RedisRepository) *Service {
+func NewService(repo *Repository, redisRepo *RedisRepository, eventBus eventbus.Publisher) *Service {
     rand.Seed(time.Now().UnixNano())
     return &Service{
         repo: repo,
         redisRepo: redisRepo,
+        eventBus: eventBus,
     }
 }
 
@@ -262,6 +267,42 @@ func (s *Service) SendLiveChatMessage(ctx context.Context, roomID, userID, text 
     }
 
     return s.redisRepo.PublishRoomEvent(ctx, roomID, event)
+}
+
+func (s *Service) InviteUserToRoom(ctx context.Context, roomID, inviterID, targetUserID string) error {
+    if roomID == "" || inviterID == "" || targetUserID == "" {
+        return ErrInvalidInput
+    }
+    if inviterID == targetUserID {
+        return ErrInvalidInput
+    }
+
+    room, err := s.repo.GetRoom(ctx, roomID)
+    if err != nil {
+        return err
+    }
+    if room == nil || room.Status != "ACTIVE" {
+        return ErrRoomNotFound
+    }
+
+    inviter, err := s.repo.GetUserSkinnyInfo(ctx, inviterID)
+    if err != nil {
+        return err
+    }
+
+    event := &events.PartyInviteEvent{
+        RoomId:        room.ID,
+        RoomName:      room.Name,
+        InviterId:     inviter.UserID,
+        InviterName:   inviter.DisplayName,
+        InviterAvatar: inviter.AvatarURL,
+        TargetUserId:  targetUserID,
+        OccurredAt:    timestamppb.Now(),
+    }
+
+    _ = s.eventBus.Publish(ctx, eventbus.PartyInviteTopic, event)
+
+    return nil
 }
 
 func isUniqueViolation(err error) bool {

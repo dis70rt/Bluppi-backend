@@ -231,6 +231,19 @@ func (h *GrpcHandler) GetListeners(ctx context.Context, req *roompb.GetListeners
 	}, nil
 }
 
+func (h *GrpcHandler) InviteUserToRoom(ctx context.Context, req *roompb.InviteUserRequest) (*emptypb.Empty, error) {
+	userID, err := middlewares.GetUserID(ctx)
+	if err != nil {
+		return nil, h.mapError(err)
+	}
+
+	err = h.service.InviteUserToRoom(ctx, req.RoomId, userID, req.TargetUserId)
+	if err != nil {
+		return nil, h.mapError(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (h *GrpcHandler) SendLiveChatMessage(ctx context.Context, req *roompb.SendLiveChatMessageRequest) (*emptypb.Empty, error) {
 	userID, err := middlewares.GetUserID(ctx)
     if err != nil {

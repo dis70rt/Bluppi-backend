@@ -11,6 +11,7 @@ import (
 	pb_party "github.com/dis70rt/bluppi-backend/internals/gen/party"
 	pb_room "github.com/dis70rt/bluppi-backend/internals/gen/rooms"
 	pb_playback "github.com/dis70rt/bluppi-backend/internals/gen/playback"
+	pb_notif "github.com/dis70rt/bluppi-backend/internals/gen/notifications"
 )
 
 func Setup(server *grpc.Server, h *Handlers) {
@@ -40,6 +41,10 @@ func Setup(server *grpc.Server, h *Handlers) {
 
 	if h.PlaybackHandler != nil {
 		pb_playback.RegisterPlaybackServiceServer(server, h.PlaybackHandler)
+	}
+
+	if h.NotifHandler != nil {
+		pb_notif.RegisterNotificationServiceServer(server, h.NotifHandler)
 	}
 	
 	/* if h.ChatHandler != nil {
