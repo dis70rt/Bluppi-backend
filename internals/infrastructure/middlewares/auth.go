@@ -1,14 +1,15 @@
 package middlewares
 
 import (
-    "context"
-    "strings"
+	"context"
+	"os"
+	"strings"
 
-    "firebase.google.com/go/v4/auth"
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/codes"
-    "google.golang.org/grpc/metadata"
-    "google.golang.org/grpc/status"
+	"firebase.google.com/go/v4/auth"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 type contextKey string
@@ -25,6 +26,11 @@ func UnaryAuthInterceptor(authClient *auth.Client) grpc.UnaryServerInterceptor {
         
         if isPublicEndpoint(info.FullMethod) {
             return handler(ctx, req)
+        }
+
+        if mockID := getMockUserID(ctx); mockID != "" {
+             ctx = context.WithValue(ctx, UserIDKey, mockID)
+             return handler(ctx, req)
         }
 
         token, err := extractToken(ctx)
@@ -53,6 +59,14 @@ func StreamAuthInterceptor(authClient *auth.Client) grpc.StreamServerInterceptor
 
         if isPublicEndpoint(info.FullMethod) {
             return handler(srv, ss)
+        }
+
+        if mockID := getMockUserID(ss.Context()); mockID != "" {
+             wrappedStream := &authenticatedStream{
+                ServerStream: ss,
+                ctx:          context.WithValue(ss.Context(), UserIDKey, mockID),
+            }
+            return handler(srv, wrappedStream)
         }
 
         token, err := extractToken(ss.Context())
@@ -131,4 +145,18 @@ func GetUserID(ctx context.Context) (string, error) {
         return "", status.Error(codes.Unauthenticated, "user not authenticated")
     }
     return userID, nil
+}
+
+func getMockUserID(ctx context.Context) string {
+    if os.Getenv("ALLOW_MOCK_AUTH") != "true" {
+        return ""
+    }
+    md, ok := metadata.FromIncomingContext(ctx)
+    if !ok {
+        return ""
+    }
+    if ids := md.Get("x-mock-user-id"); len(ids) > 0 {
+        return ids[0]
+    }
+    return ""
 }

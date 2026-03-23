@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package presences;
+
+option go_package = "./internals/gen/presences";
+
+import "google/protobuf/empty.proto";
+
+service PresenceGateway {
+  rpc SubscribePresence (SubscribeRequest) returns (stream PresenceUpdate);
+}
+
+service InternalPresence {
+    rpc RecordHeartbeat (HeartBeatRequest) returns (google.protobuf.Empty);
+}
+
+message SubscribeRequest {
+    repeated string target_user_ids = 1;
+}
+
+message PresenceUpdate {
+  string user_id = 1;
+  string status = 2;
+  int64 last_seen = 3;
+}
+
+message HeartBeatRequest {
+    string user_id = 1;
+}
+

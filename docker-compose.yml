@@ -37,7 +37,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./bluppi-app-firebase-adminsdk-fbsvc-002b2f7447.json:/app/firebase-credentials.json:ro
+      - ./bluppi-app-firebase-adminsdk-fbsvc-05ec1a0ad8.json:/app/firebase-credentials.json:ro
     ports:
       - "50051:50051"
     networks:

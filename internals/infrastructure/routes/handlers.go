@@ -11,6 +11,7 @@ import (
 	"github.com/dis70rt/bluppi-backend/internals/notifications"
 	"github.com/dis70rt/bluppi-backend/internals/party"
 	"github.com/dis70rt/bluppi-backend/internals/playback"
+	"github.com/dis70rt/bluppi-backend/internals/presence"
 	"github.com/dis70rt/bluppi-backend/internals/users"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
@@ -23,6 +24,7 @@ type Handlers struct {
 	RoomHandler *party.GrpcHandler
 	PlaybackHandler *playback.PlaybackHandler
 	NotifHandler *notifications.GrpcHandler
+	PresenceHandler *presence.Service
 	// ChatHandler *chat.GrpcHandler
 }
 
@@ -61,6 +63,11 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, fcmCli
 	notifConsumer := notifications.NewConsumer(notifService, globalBus, fcmSender)
 	go notifConsumer.Start(ctx)
 
+	presenceRepo := presence.NewRepository(redis)
+	presenceService := presence.NewService(presenceRepo, redis)
+	presenceReaper := presence.NewReaper(presenceRepo, redis)
+	go presenceReaper.Start(ctx)
+
 	// --- Future Modules ---
 	// chatRepo := chat.NewRepository(db)
 
@@ -71,6 +78,7 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, fcmCli
 		RoomHandler: roomHandler,
 		PlaybackHandler: playbackHandler,
 		NotifHandler: notifHandler,
+		PresenceHandler: presenceService,
 		// ChatHandler: chatHandler,
 	}
 }

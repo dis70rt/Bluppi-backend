@@ -1,4 +1,4 @@
-COMPOSE = docker compose
+COMPOSE = sudo docker compose
 
 .PHONY: up down restart build rebuild logs grid clean prune
 
