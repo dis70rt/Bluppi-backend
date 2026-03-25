@@ -41,9 +41,16 @@ func (s *Service) GetFriendsFeed(ctx context.Context, userID string, limit, offs
         }
     }
 
-    // 3. Batch fetch metadata from SQL
-    userMap, _ := s.sqlRepo.GetUsersByIDs(ctx, userIDs)
-    trackMap, _ := s.sqlRepo.GetTracksByIDs(ctx, trackIDs)
+    // 3. Batch fetch metadata from SQL safely
+    userMap, err := s.sqlRepo.GetUsersByIDs(ctx, userIDs)
+    if err != nil {
+        return nil, err
+    }
+
+    trackMap, err := s.sqlRepo.GetTracksByIDs(ctx, trackIDs)
+    if err != nil {
+        return nil, err
+    }
 
     // 4. Stitch everything together
     var activities []Activity
@@ -57,6 +64,7 @@ func (s *Service) GetFriendsFeed(ctx context.Context, userID string, limit, offs
             FriendID:   f.FriendID,
             FriendName: uData.Name,
             Status:     f.Status,
+            LastSeen:   f.LastActive, // Bind graph's Last Seen
         }
 
         if uData.ProfilePic != nil {
@@ -70,6 +78,9 @@ func (s *Service) GetFriendsFeed(ctx context.Context, userID string, limit, offs
                 act.TrackArtist = &tData.Artists
                 if tData.ImageSmall != nil {
                     act.TrackCoverURL = tData.ImageSmall
+                }
+                if tData.PreviewURL != nil {
+                    act.TrackPreviewURL = tData.PreviewURL // Bind Preview URL
                 }
             }
         }

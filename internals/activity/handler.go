@@ -24,7 +24,7 @@ func (h *GrpcHandler) GetFriendsFeed(ctx context.Context, req *pb.GetFriendsFeed
 
     activities, err := h.service.GetFriendsFeed(ctx, userID, req.Limit, req.Offset)
     if err != nil {
-        return nil, h.mapError(err)
+        return nil, mapError(err)
     }
 
     pbActivities := make([]*pb.FriendActivity, len(activities))

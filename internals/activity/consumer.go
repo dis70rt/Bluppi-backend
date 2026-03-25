@@ -9,9 +9,9 @@ import (
 )
 
 type PresenceEvent struct {
-    UserID   string `json:"UserID"`
-    Status   string `json:"Status"`
-    LastSeen int64  `json:"LastSeen"`
+    UserID   string `json:"user_id"`
+    Status   string `json:"status"`
+    LastSeen int64  `json:"last_seen"`
 }
 
 type Consumer struct {
@@ -35,7 +35,7 @@ func (c *Consumer) Start(ctx context.Context) {
         case msg := <-ch:
             var event PresenceEvent
             if err := json.Unmarshal([]byte(msg.Payload), &event); err == nil {
-                err := c.graphRepo.UpdateUserPresence(ctx, event.UserID, event.Status)
+                err := c.graphRepo.UpdateUserPresence(ctx, event.UserID, event.Status, event.LastSeen)
                 if err != nil {
                     log.Printf("Activity Graph failed to update presence for %s: %v", event.UserID, err)
                 }

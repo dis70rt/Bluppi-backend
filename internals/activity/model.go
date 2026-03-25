@@ -15,4 +15,6 @@ type Activity struct {
     TrackTitle      *string
     TrackArtist     *string
     TrackCoverURL   *string
+    TrackPreviewURL *string
+    LastSeen        int64
 }

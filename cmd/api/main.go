@@ -49,7 +49,19 @@ func main() {
 	}
 	log.Println("Firebase FCM initialized")
 
-	appHandlers := routes.BuildHandlers(ctx, dbWrapper.DB, redisWrapper.Client, fcmClient)
+	mgCfg := database.MemgraphConfig{
+        URI:      getEnv("MEMGRAPH_URI", "bolt://localhost:7687"),
+        Username: getEnv("MEMGRAPH_USER", ""),
+        Password: getEnv("MEMGRAPH_PASS", ""),
+    }
+    mgWrapper, err := database.NewMemgraph(mgCfg)
+    if err != nil {
+        log.Fatalf("Failed to connect to Memgraph: %v", err)
+    }
+    defer mgWrapper.Close(ctx)
+    log.Println("Memgraph connected successfully")
+
+	appHandlers := routes.BuildHandlers(ctx, dbWrapper.DB, redisWrapper.Client, mgWrapper.Driver, fcmClient)
 
 	port := getEnv("PORT", ":50051")
 	lis, err := net.Listen("tcp", port)

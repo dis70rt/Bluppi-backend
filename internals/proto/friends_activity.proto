@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package friends_activity;
+import "google/protobuf/timestamp.proto";
 option go_package = "./internals/gen/friends_activity";
 
 service FriendsActivityService {
@@ -17,6 +18,8 @@ message FriendActivity {
     optional string track_title = 6;
     optional string track_artist = 7;
     optional string track_cover_url = 8;
+    optional string track_preview_url = 9;
+    google.protobuf.Timestamp last_seen = 10;
 }
 
 message GetFriendsFeedRequest {

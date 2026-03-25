@@ -13,6 +13,7 @@ import (
 	pb_playback "github.com/dis70rt/bluppi-backend/internals/gen/playback"
 	pb_notif "github.com/dis70rt/bluppi-backend/internals/gen/notifications"
 	pb_presence "github.com/dis70rt/bluppi-backend/internals/gen/presences"
+	pb_activity "github.com/dis70rt/bluppi-backend/internals/gen/friends_activity"
 )
 
 func Setup(server *grpc.Server, h *Handlers) {
@@ -51,6 +52,10 @@ func Setup(server *grpc.Server, h *Handlers) {
 	if h.PresenceHandler != nil {
         pb_presence.RegisterInternalPresenceServer(server, h.PresenceHandler)
     }
+
+	if h.ActivityHandler != nil {
+		pb_activity.RegisterFriendsActivityServiceServer(server, h.ActivityHandler)
+	}
 	
 	/* if h.ChatHandler != nil {
 		pb.RegisterChatServiceServer(server, h.ChatHandler)

@@ -8,6 +8,7 @@ import (
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/presences"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type Server struct {
@@ -51,7 +52,7 @@ func (s *Server) SubscribePresence(req *pb.SubscribeRequest, stream pb.PresenceG
             grpcMessage := &pb.PresenceUpdate{
                 UserId:   event.UserID,
                 Status:   event.Status,
-                LastSeen: event.LastSeen,
+                LastSeen: timestamppb.New(time.Unix(event.LastSeen, 0)),
             }
 
             if err := stream.Send(grpcMessage); err != nil {

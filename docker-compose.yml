@@ -30,10 +30,13 @@ services:
   bluppi-api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.api
     container_name: bluppi-api
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      memgraph:
+        condition: service_healthy
     env_file:
       - .env
     volumes:
@@ -106,12 +109,35 @@ services:
     # ]
     networks:
       - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "mgconsole 'RETURN 1;' > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     # logging:
     #   driver: json-file
     #   options:
     #     max-size: "10m"
     #     max-file: "3"
 
+  bluppi-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: bluppi-gateway
+    depends_on:
+      - bluppi-api
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ./bluppi-app-firebase-adminsdk-fbsvc-05ec1a0ad8.json:/app/firebase-credentials.json:ro
+    ports:
+      - "50050:50050"
+    environment:
+      - PRESENCE_INTERNAL_URL=bluppi-api:50051
+    networks:
+      - cloudflared
 
   # ws1:
   #   build: .

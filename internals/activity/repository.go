@@ -2,6 +2,7 @@ package activity
 
 import (
     "context"
+
     "github.com/jmoiron/sqlx"
     "github.com/lib/pq"
 )
@@ -25,9 +26,14 @@ type HydratedTrack struct {
     Title      string  `db:"title"`
     Artists    string  `db:"artists"`
     ImageSmall *string `db:"image_small"`
+    PreviewURL *string `db:"preview_url"`
 }
 
 func (r *Repository) GetUsersByIDs(ctx context.Context, ids []string) (map[string]HydratedUser, error) {
+    if len(ids) == 0 {
+        return make(map[string]HydratedUser), nil
+    }
+
     var users []HydratedUser
     err := r.db.SelectContext(ctx, &users, `SELECT id, name, profile_pic FROM users WHERE id = ANY($1)`, pq.Array(ids))
     if err != nil {
@@ -42,8 +48,12 @@ func (r *Repository) GetUsersByIDs(ctx context.Context, ids []string) (map[strin
 }
 
 func (r *Repository) GetTracksByIDs(ctx context.Context, ids []string) (map[string]HydratedTrack, error) {
+    if len(ids) == 0 {
+        return make(map[string]HydratedTrack), nil
+    }
+
     var tracks []HydratedTrack
-    err := r.db.SelectContext(ctx, &tracks, `SELECT track_id, title, artists, image_small FROM tracks WHERE track_id = ANY($1)`, pq.Array(ids))
+    err := r.db.SelectContext(ctx, &tracks, `SELECT track_id, title, artists, image_small, preview_url FROM tracks WHERE track_id = ANY($1)`, pq.Array(ids))
     if err != nil {
         return nil, err
     }

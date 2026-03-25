@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"firebase.google.com/go/v4/messaging"
+	"github.com/dis70rt/bluppi-backend/internals/activity"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
 	eventbus "github.com/dis70rt/bluppi-backend/internals/infrastructure/eventBus"
 	"github.com/dis70rt/bluppi-backend/internals/music"
@@ -26,6 +27,7 @@ type Handlers struct {
 	PlaybackHandler *playback.PlaybackHandler
 	NotifHandler *notifications.GrpcHandler
 	PresenceHandler *presence.Service
+	ActivityHandler *activity.GrpcHandler
 	// ChatHandler *chat.GrpcHandler
 }
 
@@ -71,6 +73,13 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, memGra
 	presenceReaper := presence.NewReaper(presenceRepo, redis)
 	go presenceReaper.Start(ctx)
 
+	activityRepo := activity.NewRepository(db)
+	activityGraphRepo := activity.NewGraphRepository(memGraph)
+	activityService := activity.NewService(activityGraphRepo, activityRepo)
+	activityHandler := activity.NewGrpcHandler(activityService)
+	activityConsumer := activity.NewConsumer(redis, activityGraphRepo)
+	go activityConsumer.Start(ctx)
+
 	// --- Future Modules ---
 	// chatRepo := chat.NewRepository(db)
 
@@ -82,6 +91,7 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, memGra
 		PlaybackHandler: playbackHandler,
 		NotifHandler: notifHandler,
 		PresenceHandler: presenceService,
+		ActivityHandler: activityHandler,
 		// ChatHandler: chatHandler,
 	}
 }
