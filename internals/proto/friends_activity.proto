@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package friends_activity;
+option go_package = "./internals/gen/friends_activity";
+
+service FriendsActivityService {
+    rpc GetFriendsFeed(GetFriendsFeedRequest) returns (GetFriendsFeedResponse);
+}
+message FriendActivity {
+    string friend_id = 1;
+    string friend_name = 2;
+    string friend_avatar_url = 3;
+    string status = 4; // "online" or "offline"
+
+    // Track metadata (can be empty if they have no history)
+    optional string track_id = 5;
+    optional string track_title = 6;
+    optional string track_artist = 7;
+    optional string track_cover_url = 8;
+}
+
+message GetFriendsFeedRequest {
+    int32 limit = 2;
+    int32 offset = 3;
+}
+
+message GetFriendsFeedResponse {
+    repeated FriendActivity activities = 1;
+}

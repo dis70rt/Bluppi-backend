@@ -52,7 +52,7 @@ services:
     volumes:
       - /data/solr-data:/var/solr
     environment:
-      SOLR_JAVA_MEM: "-Xms2g -Xmx4g"
+      SOLR_JAVA_MEM: "-Xms512m -Xmx1g" # Reduce memory consumption (2GB)
     networks:
       - cloudflared
     logging:
@@ -89,6 +89,28 @@ services:
       - "8001:8000"
     networks:
       - cloudflared
+
+  memgraph:
+    image: memgraph/memgraph-mage:latest
+    container_name: bluppi-memgraph
+    restart: unless-stopped
+    ports:
+      - "7687:7687"
+    volumes:
+      - /data/memgraph-data:/var/lib/memgraph
+      - /data/memgraph-log:/var/log/memgraph
+
+    # command: [
+    #   # "--storage-mode=ON_DISK_TRANSACTIONAL", # Writing In SSD
+    #   "--memory-limit=1024" # Strict 1GB RAM cap
+    # ]
+    networks:
+      - cloudflared
+    # logging:
+    #   driver: json-file
+    #   options:
+    #     max-size: "10m"
+    #     max-file: "3"
 
 
   # ws1:

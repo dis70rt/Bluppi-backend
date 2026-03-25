@@ -14,6 +14,7 @@ import (
 	"github.com/dis70rt/bluppi-backend/internals/presence"
 	"github.com/dis70rt/bluppi-backend/internals/users"
 	"github.com/jmoiron/sqlx"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -28,18 +29,20 @@ type Handlers struct {
 	// ChatHandler *chat.GrpcHandler
 }
 
-func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, fcmClient *messaging.Client) *Handlers {
+func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, memGraph neo4j.DriverWithContext, fcmClient *messaging.Client) *Handlers {
 	globalBus := eventbus.NewRedisEventBus(redis)
 	
 	// --- Users Module ---
 	userRepo := users.NewRepository(db)
-	userService := users.NewService(userRepo, globalBus)
+	userGraphRepo := users.NewGraphRepository(memGraph)
+	userService := users.NewService(userRepo, userGraphRepo, globalBus)
 	userHandler := users.NewGrpcHandler(userService)
 
 	// --- Tracks Modules ---
 	solr := database.NewSolrClient(os.Getenv("SOLR_URL"))
 	trackRepo := music.NewRepository(db, solr)
-	trackService := music.NewService(trackRepo)
+	trackGraphRepo := music.NewGraphRepository(memGraph)
+	trackService := music.NewService(trackRepo, trackGraphRepo)
 	trackHandler := music.NewGrpcHandler(trackService)
 
 	// --- Party Module ---

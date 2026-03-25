@@ -21,12 +21,14 @@ var (
 
 type Service struct {
 	repo *Repository
+	graphRepo *GraphRepository
 	eventBus eventbus.Publisher
 }
 
-func NewService(repo *Repository, eventBus eventbus.Publisher) *Service {
+func NewService(repo *Repository, graphRepo *GraphRepository, eventBus eventbus.Publisher) *Service {
 	return &Service{
 		repo: repo,
+		graphRepo: graphRepo,
 		eventBus: eventBus,
 	}
 }
@@ -158,6 +160,11 @@ func (s *Service) Follow(ctx context.Context, followerID, followeeID string) err
 		return err
 	}
 
+	err = s.graphRepo.Follow(ctx, followerID, followeeID)
+    if err != nil {
+        return err
+    }
+
 	follower, _ := s.repo.GetUserByID(ctx, followerID)
 	event := &events.UserFollowedEvent{
 		FollowerId: followerID,
@@ -181,6 +188,12 @@ func (s *Service) Unfollow(ctx context.Context, followerID, followeeID string) e
 	if errors.Is(err, sql.ErrNoRows) {
 		return ErrNotFollowing
 	}
+
+	err = s.graphRepo.Unfollow(ctx, followerID, followeeID)
+    if err != nil {
+        return err
+    }
+	
 	return err
 }
 
@@ -243,4 +256,11 @@ func (s *Service) IsFollowing(ctx context.Context, followerID, followeeID string
         return false, ErrInvalidInput
     }
     return s.repo.IsFollowing(ctx, followerID, followeeID)
+}
+
+func (s *Service) GetFriendsFeed(ctx context.Context, userID string, limit, offset int32) ([]FriendFeedItem, error) {
+	if userID == "" {
+		return nil, ErrInvalidInput
+	}
+	return s.graphRepo.GetSortedFriendsFeed(ctx, userID, limit, offset)
 }

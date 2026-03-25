@@ -16,10 +16,11 @@ var (
 
 type Service struct {
     repo *Repository
+    graphRepo *GraphRepository
 }
 
-func NewService(repo *Repository) *Service {
-    return &Service{repo: repo}
+func NewService(repo *Repository, graphRepo *GraphRepository) *Service {
+    return &Service{repo: repo, graphRepo: graphRepo}
 }
 
 // ----------------- Core Track Reading -----------------
@@ -89,7 +90,17 @@ func (s *Service) LikeTrack(ctx context.Context, userID, trackID string) error {
         return ErrInvalidInput
     }
 
-    return s.repo.LikeTrack(ctx, userID, trackID)
+    err := s.repo.LikeTrack(ctx, userID, trackID)
+    if err != nil {
+        return err
+    }
+
+    err = s.graphRepo.LikeTrack(ctx, userID, trackID)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (s *Service) UnlikeTrack(ctx context.Context, userID, trackID string) error {
@@ -100,8 +111,16 @@ func (s *Service) UnlikeTrack(ctx context.Context, userID, trackID string) error
     err := s.repo.UnlikeTrack(ctx, userID, trackID)
     if errors.Is(err, sql.ErrNoRows) {
         return ErrNotLiked
+    } else if err != nil {
+        return err
     }
-    return err
+
+    err = s.graphRepo.UnlikeTrack(ctx, userID, trackID)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (s *Service) IsTrackLiked(ctx context.Context, userID, trackID string) (bool, error) {
@@ -136,7 +155,17 @@ func (s *Service) AddTrackToHistory(ctx context.Context, userID, trackID string)
     if userID == "" || trackID == "" {
         return ErrInvalidInput
     }
-    return s.repo.AddTrackToHistory(ctx, userID, trackID)
+    err := s.repo.AddTrackToHistory(ctx, userID, trackID)
+    if err != nil {
+        return err
+    }
+
+    err = s.graphRepo.LogListen(ctx, userID, trackID)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (s *Service) GetTrackHistory(
