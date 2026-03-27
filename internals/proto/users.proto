@@ -31,6 +31,8 @@ service UserService {
   rpc GetFollowers (GetFollowersRequest) returns (GetFollowersResponse);
   rpc GetFollowing (GetFollowingRequest) returns (GetFollowingResponse);
   rpc IsFollowing (IsFollowingRequest) returns (IsFollowingResponse);
+
+  rpc GetSuggestedFriends (SuggestFriendsRequest) returns (SuggestFriendsResponse);
 }
 
 // =========================================
@@ -219,3 +221,21 @@ message GetFollowingResponse {
   int64 total = 2;
 }
 
+message UserSummary {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string profile_pic = 4;
+  optional string suggestion_reason = 5;
+}
+
+message SuggestFriendsRequest {
+  int32 limit = 1;
+  string next_cursor = 2;
+}
+
+message SuggestFriendsResponse {
+  repeated UserSummary users = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}

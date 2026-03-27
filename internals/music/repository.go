@@ -291,3 +291,36 @@ func (r *Repository) ClearTrackHistory(ctx context.Context, userID string) error
     _, err := r.db.ExecContext(ctx, `DELETE FROM history_tracks WHERE user_id = $1`, userID)
     return err
 }
+
+func (r *Repository) GetTracksByIDs(ctx context.Context, ids []string) ([]Track, error) {
+    if len(ids) == 0 {
+        return []Track{}, nil
+    }
+
+    query, args, err := sqlx.In(baseSelectQuery()+` WHERE t.track_id IN (?)`, ids)
+    if err != nil {
+        return nil, err
+    }
+
+    query = r.db.Rebind(query)
+
+    var tracks []Track
+    err = r.db.SelectContext(ctx, &tracks, query, args...)
+    return tracks, err
+}
+
+func (r *Repository) GetUnseenPopularTracks(ctx context.Context, userID string, limit int) ([]Track, error) {
+    tracks := []Track{}
+    query := baseSelectQuery() + `
+        WHERE t.track_id NOT IN (
+            SELECT track_id FROM user_track WHERE user_id = $1
+            UNION
+            SELECT track_id FROM history_tracks WHERE user_id = $1
+        )
+        ORDER BY t.popularity DESC 
+        LIMIT $2
+    `
+    
+    err := r.db.SelectContext(ctx, &tracks, query, userID, limit)
+    return tracks, err
+}

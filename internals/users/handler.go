@@ -301,3 +301,32 @@ func (h *GrpcHandler) IsFollowing(ctx context.Context, req *pb.IsFollowingReques
 		IsFollowing: isFollowing,
 	}, nil
 }
+
+func (h *GrpcHandler) GetSuggestedFriends(ctx context.Context, req *pb.SuggestFriendsRequest) (*pb.SuggestFriendsResponse, error) {
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    suggestedUsers, err := h.service.GetSuggestedUsers(ctx, userID, int(req.Limit))
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+    var summaries []*pb.UserSummary
+    for _, u := range suggestedUsers {
+        summary := &pb.UserSummary{
+            Id:         u.ID,
+            Username:   u.Username,
+            Name:       u.Name,
+            ProfilePic: ptrToString(u.ProfilePic),
+            // TODO: Set SuggestionReason here later from, memgraph
+        }
+        summaries = append(summaries, summary)
+    }
+
+    return &pb.SuggestFriendsResponse{
+        Users: summaries,
+    }, nil
+}
+

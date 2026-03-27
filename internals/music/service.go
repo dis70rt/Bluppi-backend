@@ -1,9 +1,10 @@
 package music
 
 import (
-    "context"
-    "database/sql"
-    "errors"
+	"context"
+	"database/sql"
+	"errors"
+	"time"
 )
 
 var (
@@ -192,4 +193,72 @@ func (s *Service) ClearTrackHistory(ctx context.Context, userID string) error {
         return ErrInvalidInput
     }
     return s.repo.ClearTrackHistory(ctx, userID)
+}
+
+func (s *Service) WeeklyDiscoverTracks(ctx context.Context, userID string, limit int) ([]Track, error) {
+    if userID == "" {
+        return nil, ErrInvalidInput
+    }
+    if limit <= 0 || limit > 50 {
+        limit = 20
+    }
+
+    var finalTrackIDs []string
+    seen := make(map[string]bool)
+
+    sevenDaysAgo := time.Now().AddDate(0, 0, -7).Unix()
+    recentIDs, err := s.graphRepo.GetWeeklyDiscover(ctx, userID, limit, sevenDaysAgo)
+    if err == nil {
+        for _, id := range recentIDs {
+            finalTrackIDs = append(finalTrackIDs, id)
+            seen[id] = true
+        }
+    }
+
+    if len(finalTrackIDs) < limit {
+        allTimeLimit := limit - len(finalTrackIDs)
+        allTimeIDs, err := s.graphRepo.GetWeeklyDiscover(ctx, userID, allTimeLimit, 0)
+        if err == nil {
+            for _, id := range allTimeIDs {
+                if !seen[id] {
+                    finalTrackIDs = append(finalTrackIDs, id)
+                    seen[id] = true
+                }
+            }
+        }
+    }
+
+    var discoveredTracks []Track
+
+    if len(finalTrackIDs) > 0 {
+        tracks, err := s.repo.GetTracksByIDs(ctx, finalTrackIDs)
+        if err == nil {
+            trackMap := make(map[string]Track)
+            for _, t := range tracks {
+                trackMap[t.ID] = t
+            }
+            for _, id := range finalTrackIDs {
+                if track, exists := trackMap[id]; exists {
+                    discoveredTracks = append(discoveredTracks, track)
+                }
+            }
+        }
+    }
+
+    // Absolute Fallback
+    if len(discoveredTracks) < limit {
+        remaining := limit - len(discoveredTracks)
+        
+        unseenPopularTracks, err := s.repo.GetUnseenPopularTracks(ctx, userID, remaining)
+        if err == nil {
+            for _, pt := range unseenPopularTracks {
+                if !seen[pt.ID] {
+                    discoveredTracks = append(discoveredTracks, pt)
+                    seen[pt.ID] = true
+                }
+            }
+        }
+    }
+
+    return discoveredTracks, nil
 }

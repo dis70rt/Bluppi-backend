@@ -258,9 +258,31 @@ func (s *Service) IsFollowing(ctx context.Context, followerID, followeeID string
     return s.repo.IsFollowing(ctx, followerID, followeeID)
 }
 
-func (s *Service) GetFriendsFeed(ctx context.Context, userID string, limit, offset int32) ([]FriendFeedItem, error) {
+func (s *Service) GetSuggestedUsers(ctx context.Context, userID string, limit int) ([]*User, error) {
 	if userID == "" {
 		return nil, ErrInvalidInput
 	}
-	return s.graphRepo.GetSortedFriendsFeed(ctx, userID, limit, offset)
+	if limit <= 0 || limit > 100 {
+		limit = 20
+	}
+
+	suggestedIDs, err := s.graphRepo.GetSuggestedUsers(ctx, userID, limit);
+	if err != nil {
+		return nil, err
+	}
+
+	var rankedUsers []*User
+    for _, id := range suggestedIDs {
+        user, err := s.GetUserByID(ctx, id)
+        if err != nil {
+            // If a user exists in Memgraph but was deleted in Postgres, just skip them
+            if errors.Is(err, ErrUserNotFound) {
+                continue
+            }
+            return nil, err
+        }
+        rankedUsers = append(rankedUsers, user)
+    }
+
+    return rankedUsers, nil
 }

@@ -7,3 +7,9 @@
 __pycache__/
 *.pyc
 *adminsdk*
+
+# Cloudflare Tunnel Secrets
+cloudflared/*.json
+cloudflared/*.pem
+
+certs/

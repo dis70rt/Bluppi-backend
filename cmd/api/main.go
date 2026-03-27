@@ -10,6 +10,8 @@ import (
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
 
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
 	firebase "github.com/dis70rt/bluppi-backend/internals/infrastructure/firebase"
@@ -69,7 +71,16 @@ func main() {
 		log.Fatalf("Failed to listen on %s: %v", port, err)
 	}
 
+	certFile := getEnv("TLS_CERT_FILE", "certs/server.crt")
+    keyFile := getEnv("TLS_KEY_FILE", "certs/server.key")
+
+	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+    if err != nil {
+        log.Fatalf("Failed to load TLS credentials: %v", err)
+    }
+
 	grpcServer := grpc.NewServer(
+		grpc.Creds(creds),
 		grpc.UnaryInterceptor(middlewares.UnaryAuthInterceptor(authClient)),
 		grpc.StreamInterceptor(middlewares.StreamAuthInterceptor(authClient)),
 	)

@@ -211,3 +211,25 @@ func (h *GrpcHandler) ClearTrackHistory(ctx context.Context, req *pb.ClearTrackH
         Message: "track history cleared",
     }, nil
 }
+
+func (h *GrpcHandler) WeeklyDiscoverTracks(ctx context.Context, req *pb.DiscoverTracksRequest) (*pb.DiscoverTracksResponse, error) {
+    userID, err := middlewares.GetUserID(ctx)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+    tracks, err := h.service.WeeklyDiscoverTracks(ctx, userID, int(req.Limit))
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+    pbTracks := make([]*pb.TrackSummary, len(tracks))
+    for i := range tracks {
+        pbTracks[i] = h.mapTrackToSummaryProto(&tracks[i])
+    }
+
+    return &pb.DiscoverTracksResponse{
+        Tracks:  pbTracks,
+        HasMore: false, 
+    }, nil
+}

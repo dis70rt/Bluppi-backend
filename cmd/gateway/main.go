@@ -13,9 +13,10 @@ import (
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/database"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/firebase"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
+
 	// "github.com/joho/godotenv"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 )
 
 // func init() {
@@ -42,9 +43,23 @@ func main() {
     }
     log.Println("Firebase Auth initialized")
 
+    certFile := getEnv("TLS_CERT_FILE", "certs/server.crt")
+    keyFile := getEnv("TLS_KEY_FILE", "certs/server.key")
+
+    clientCreds, err := credentials.NewClientTLSFromFile(certFile, "")
+    if err != nil {
+        log.Fatalf("Failed to load client TLS credentials: %v", err)
+    }
+
+    // Server Credentials (used to secure the GATEWAY itself)
+    serverCreds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
+    if err != nil {
+        log.Fatalf("Failed to load server TLS credentials: %v", err)
+    }
+
     // The internal gRPC API defaults to localhost:50051
     presenceServiceAddr := getEnv("PRESENCE_INTERNAL_URL", "localhost:50051")
-    internalConn, err := grpc.NewClient(presenceServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    internalConn, err := grpc.NewClient(presenceServiceAddr, grpc.WithTransportCredentials(clientCreds))
     if err != nil {
         log.Fatalf("did not connect to internal presence service: %v", err)
     }
@@ -68,6 +83,7 @@ func main() {
     }
 
     grpcServer := grpc.NewServer(
+        grpc.Creds(serverCreds),
         grpc.UnaryInterceptor(middlewares.UnaryAuthInterceptor(authClient)),
         grpc.StreamInterceptor(middlewares.StreamAuthInterceptor(authClient)),
     )

@@ -28,6 +28,7 @@ service TrackService {
 
   // --- Recommendations ---
   rpc GetRecommendations (GetRecommendationsRequest) returns (GetRecommendationsResponse);
+  rpc WeeklyDiscoverTracks (DiscoverTracksRequest) returns (DiscoverTracksResponse);
 }
 
 // =========================================
@@ -183,4 +184,26 @@ message GetRecommendationsRequest {
 
 message GetRecommendationsResponse {
   repeated Track tracks = 1;
+}
+
+message TrackSummary {
+  string id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_url = 4;
+  string preview_url = 5;
+
+  optional int32 social_count = 6;
+  optional string social_context = 7;
+}
+
+message DiscoverTracksRequest {
+  int32 limit = 1;
+  string next_cursor = 2;
+}
+
+message DiscoverTracksResponse {
+  repeated TrackSummary tracks = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
 }

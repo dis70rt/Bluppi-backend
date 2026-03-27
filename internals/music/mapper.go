@@ -108,6 +108,20 @@ func (h *GrpcHandler) mapSearchTrackToProto(t *SearchTrack) *pb.SearchTrack {
     }
 }
 
+func (h *GrpcHandler) mapTrackToSummaryProto(t *Track) *pb.TrackSummary {
+    if t == nil {
+        return nil
+    }
+    
+    return &pb.TrackSummary{
+        Id:         t.ID,
+        Title:      t.Title,
+        Artist:     t.Artists,
+        ImageUrl:   ptrToString(t.ImageLarge),
+        PreviewUrl: ptrToString(t.PreviewURL),
+    }
+}
+
 // ----------------- Helper Functions -----------------
 
 func ptrToString(s *string) string {
