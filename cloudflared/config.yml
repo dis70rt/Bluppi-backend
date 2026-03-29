@@ -17,8 +17,8 @@ ingress:
 
   # 3. gRPC Gateway (REST API v2)
   - hostname: bluppi.saikat.in
-    path: /api/v2/.*
-    service: h2c://bluppi-gateway:50050
+    path: /presences.PresenceGateway/.*
+    service: https://bluppi-gateway:50050
     originRequest:
       noTLSVerify: true
       http2Origin: true

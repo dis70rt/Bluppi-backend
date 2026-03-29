@@ -4,7 +4,7 @@ from app.schema import SearchResponse, AudioResponse
 from app.core.redis import redis_client
 from app.core.psql import PSQL
 
-router = APIRouter()
+router = APIRouter(prefix="/api/rest")
 CACHE_TTL = 3600
 
 @router.get("/search", response_model=SearchResponse)
