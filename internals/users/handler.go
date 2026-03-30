@@ -308,7 +308,7 @@ func (h *GrpcHandler) GetSuggestedFriends(ctx context.Context, req *pb.SuggestFr
         return nil, err
     }
 
-    suggestedUsers, err := h.service.GetSuggestedUsers(ctx, userID, int(req.Limit))
+    suggestedUsers, nextCursor, err := h.service.GetSuggestedUsers(ctx, userID, int(req.Limit), req.NextCursor)
     if err != nil {
         return nil, h.mapError(err)
     }
@@ -327,6 +327,7 @@ func (h *GrpcHandler) GetSuggestedFriends(ctx context.Context, req *pb.SuggestFr
 
     return &pb.SuggestFriendsResponse{
         Users: summaries,
+		NextCursor: nextCursor,
     }, nil
 }
 

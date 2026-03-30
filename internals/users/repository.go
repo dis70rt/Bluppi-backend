@@ -62,6 +62,27 @@ func (r *Repository) GetUserByID(ctx context.Context, id string) (*User, error) 
 	return &u, err
 }
 
+func (r *Repository) GetUsersByIDs(ctx context.Context, ids []string) ([]*User, error) {
+    if len(ids) == 0 {
+        return []*User{}, nil
+    }
+
+    query, args, err := sqlx.In(`SELECT * FROM users WHERE id IN (?)`, ids)
+    if err != nil {
+        return nil, err
+    }
+
+    query = r.db.Rebind(query)
+    var users []*User
+    
+    err = r.db.SelectContext(ctx, &users, query, args...)
+    if err != nil {
+        return nil, err
+    }
+
+    return users, nil
+}
+
 func (r *Repository) GetUserByUsername(ctx context.Context, username string) (*User, error) {
 	var u User
 

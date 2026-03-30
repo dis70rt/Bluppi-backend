@@ -258,31 +258,39 @@ func (s *Service) IsFollowing(ctx context.Context, followerID, followeeID string
     return s.repo.IsFollowing(ctx, followerID, followeeID)
 }
 
-func (s *Service) GetSuggestedUsers(ctx context.Context, userID string, limit int) ([]*User, error) {
+func (s *Service) GetSuggestedUsers(ctx context.Context, userID string, limit int, cursor string) ([]*User, string, error) {
 	if userID == "" {
-		return nil, ErrInvalidInput
+		return nil, "", ErrInvalidInput
 	}
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
 
-	suggestedIDs, err := s.graphRepo.GetSuggestedUsers(ctx, userID, limit);
+	suggestedIDs, nextCursor, err := s.graphRepo.GetSuggestedUsers(ctx, userID, limit, cursor);
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
+	
+	if len(suggestedIDs) == 0 {
+        return []*User{}, "", nil
+    }
+
+	unsortedUsers, err := s.repo.GetUsersByIDs(ctx, suggestedIDs)
+    if err != nil {
+        return nil, "", err
+    }
+
+	userMap := make(map[string]*User)
+    for _, u := range unsortedUsers {
+        userMap[u.ID] = u
+    }
 
 	var rankedUsers []*User
     for _, id := range suggestedIDs {
-        user, err := s.GetUserByID(ctx, id)
-        if err != nil {
-            // If a user exists in Memgraph but was deleted in Postgres, just skip them
-            if errors.Is(err, ErrUserNotFound) {
-                continue
-            }
-            return nil, err
+        if user, exists := userMap[id]; exists {
+            rankedUsers = append(rankedUsers, user)
         }
-        rankedUsers = append(rankedUsers, user)
     }
 
-    return rankedUsers, nil
+    return rankedUsers, nextCursor, nil
 }
