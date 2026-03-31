@@ -149,3 +149,6 @@ ALTER TABLE tracks DROP COLUMN search_vector;
 
 DROP INDEX IF EXISTS idx_tracks_title_trgm;
 DROP INDEX IF EXISTS idx_tracks_artists_trgm;
+
+CREATE INDEX IF NOT EXISTS idx_user_track_cursor 
+ON user_track (user_id, interaction_type, interacted_at DESC, track_id DESC);

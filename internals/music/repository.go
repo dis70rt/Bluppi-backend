@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/dis70rt/bluppi-backend/internals/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
@@ -204,26 +205,33 @@ func (r *Repository) IsTrackLiked(ctx context.Context, userID, trackID string) (
 
 func (r *Repository) GetLikedTracks(
     ctx context.Context,
-    userID string,
-    limit, offset int,
-) ([]LikedTrackEntry, int, error) {
+    userID, cursor string,
+    limit int,
+) ([]LikedTrackEntry, string, int, error) {
     results := []LikedTrackEntry{}
+    cursorTime, cursorID := utils.DecodeTimeCursor(cursor)
 
-    err := r.db.SelectContext(
-        ctx,
-        &results,
-        `
+    query := `
         SELECT ut.track_id, ut.interacted_at, t.title, t.artists, t.image_small
         FROM user_track ut
         JOIN tracks t ON ut.track_id = t.track_id
-        WHERE ut.user_id = $1 AND ut.interaction_type = 'liked'
-        ORDER BY ut.interacted_at DESC
-        LIMIT $2 OFFSET $3
-        `,
-        userID, limit, offset,
-    )
+        WHERE ut.user_id = $1 
+          AND ut.interaction_type = 'liked'
+          AND (ut.interacted_at < $2 OR (ut.interacted_at = $2 AND ut.track_id < $3))
+        ORDER BY ut.interacted_at DESC, ut.track_id DESC
+        LIMIT $4
+    `
+
+    err := r.db.SelectContext(ctx, &results, query, userID, cursorTime, cursorID, limit+1)
     if err != nil {
-        return nil, 0, err
+        return nil, "", 0, err
+    }
+
+    var nextCursor string
+    if len(results) > limit {
+        results = results[:limit]
+        lastItem := results[len(results)-1]
+        nextCursor = utils.EncodeTimeCursor(lastItem.LikedAt, lastItem.TrackID)
     }
 
     var total int
@@ -234,7 +242,7 @@ func (r *Repository) GetLikedTracks(
         userID,
     )
 
-    return results, total, err
+    return results, nextCursor, total, err
 }
 
 // ----------------- History -----------------

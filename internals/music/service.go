@@ -133,21 +133,18 @@ func (s *Service) IsTrackLiked(ctx context.Context, userID, trackID string) (boo
 
 func (s *Service) GetLikedTracks(
     ctx context.Context,
-    userID string,
-    limit, offset int,
-) ([]LikedTrackEntry, int, error) {
+    userID, cursor string,
+    limit int,
+) ([]LikedTrackEntry, string, int, error) {
     if userID == "" {
-        return nil, 0, ErrInvalidInput
+        return nil, "", 0, ErrInvalidInput
     }
 
     if limit <= 0 || limit > 100 {
         limit = 20
     }
-    if offset < 0 {
-        offset = 0
-    }
 
-    return s.repo.GetLikedTracks(ctx, userID, limit, offset)
+    return s.repo.GetLikedTracks(ctx, userID, cursor, limit)
 }
 
 // ----------------- History -----------------

@@ -117,9 +117,9 @@ message StatusResponse {
 }
 
 message GetLikedTracksRequest {
-  // string user_id = 1;
+  string target_user_id = 1;
   int32 limit = 2;
-  int32 offset = 3;
+  string cursor = 3;
 }
 
 message LikedTrackEntry {
@@ -133,6 +133,8 @@ message LikedTrackEntry {
 message GetLikedTracksResponse {
   repeated LikedTrackEntry tracks = 1;
   int64 total = 2;
+  string next_cursor = 3;
+  bool has_more = 4;
 }
 
 message IsTrackLikedRequest {

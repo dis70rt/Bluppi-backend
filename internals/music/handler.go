@@ -140,7 +140,7 @@ func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracks
         return nil, h.mapError(err)
     }
     
-    entries, total, err := h.service.GetLikedTracks(ctx, userID, int(req.Limit), int(req.Offset))
+    entries, nextCursor, total, err := h.service.GetLikedTracks(ctx, userID, req.Cursor, int(req.Limit))
     if err != nil {
         return nil, h.mapError(err)
     }
@@ -152,7 +152,9 @@ func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracks
 
     return &pb.GetLikedTracksResponse{
         Tracks: pbEntries,
-        Total:  int64(total),
+        NextCursor: nextCursor,
+        Total: int64(total),
+        HasMore: nextCursor != "",
     }, nil
 }
 
