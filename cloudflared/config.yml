@@ -22,6 +22,10 @@ ingress:
     originRequest:
       noTLSVerify: true
       http2Origin: true
+      tcpKeepAlive: 30s
+      keepAliveTimeout: 5m
+      keepAliveConnections: 10
+      connectTimeout: 30s
 
   # 4. Pure gRPC API (Catch-All)
   - hostname: bluppi.saikat.in

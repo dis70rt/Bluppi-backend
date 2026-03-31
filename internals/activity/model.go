@@ -11,6 +11,7 @@ type Activity struct {
     FriendName      string
     FriendAvatarURL string
     Status          string
+    FriendUsername  string
     TrackID         *string
     TrackTitle      *string
     TrackArtist     *string

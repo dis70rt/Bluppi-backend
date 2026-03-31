@@ -194,13 +194,13 @@ message IsFollowingResponse {
 message GetFollowersRequest {
   string user_id = 1;
   int32 limit = 2;
-  int32 offset = 3;
+  string cursor = 3;
 }
 
 message GetFollowingRequest {
   string user_id = 1;
   int32 limit = 2;
-  int32 offset = 3;
+  string cursor = 3;
 }
 
 message FollowUserEntry {
@@ -213,12 +213,14 @@ message FollowUserEntry {
 
 message GetFollowersResponse {
   repeated FollowUserEntry followers = 1;
-  int64 total = 2;
+  string next_cursor = 2;
+  bool has_more = 3;
 }
 
 message GetFollowingResponse {
   repeated FollowUserEntry following = 1;
-  int64 total = 2;
+  string next_cursor = 2;
+  bool has_more = 3;
 }
 
 message UserSummary {

@@ -63,6 +63,7 @@ func (s *Service) GetFriendsFeed(ctx context.Context, userID string, limit, offs
         act := Activity{
             FriendID:   f.FriendID,
             FriendName: uData.Name,
+            FriendUsername: uData.Username,
             Status:     f.Status,
             LastSeen:   f.LastActive, // Bind graph's Last Seen
         }

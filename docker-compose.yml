@@ -152,19 +152,19 @@ services:
       - ./cloudflared:/etc/cloudflared:ro
 
 # Remove this in production
-  lab:
-    image: memgraph/lab:latest
-    container_name: memgraph-lab
-    pull_policy: always
-    ports:
-      - "3000:3000"
-    depends_on:
-      - memgraph
-    environment:
-      - QUICK_CONNECT_MG_HOST=bluppi-memgraph
-      - QUICK_CONNECT_MG_PORT=7687
-    networks:
-      - cloudflared
+  # lab:
+  #   image: memgraph/lab:latest
+  #   container_name: memgraph-lab
+  #   pull_policy: always
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - memgraph
+  #   environment:
+  #     - QUICK_CONNECT_MG_HOST=bluppi-memgraph
+  #     - QUICK_CONNECT_MG_PORT=7687
+  #   networks:
+  #     - cloudflared
 
 networks:
   cloudflared:

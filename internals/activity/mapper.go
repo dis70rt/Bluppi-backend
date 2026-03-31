@@ -16,6 +16,7 @@ func (h *GrpcHandler) mapActivityToProto(a *Activity) *pb.FriendActivity {
         FriendName:      a.FriendName,
         FriendAvatarUrl: a.FriendAvatarURL,
         Status:          a.Status,
+        FriendUsername:  a.FriendUsername,
     }
 
     if a.LastSeen > 0 {

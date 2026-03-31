@@ -9,6 +9,7 @@ import (
 	"time"
 
 	// "github.com/google/uuid"
+	"github.com/dis70rt/bluppi-backend/internals/utils"
 	"github.com/jmoiron/sqlx"
 	// pq "github.com/lib/pq"
 )
@@ -344,66 +345,62 @@ type FollowEntry struct {
     FollowedAt time.Time  `db:"followed_at"`
 }
 
-func (r *Repository) GetFollowers(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+func (r *Repository) GetFollowers(ctx context.Context, userID, cursor string, limit int) ([]FollowEntry, string, error) {
     followers := []FollowEntry{}
+    cursorTime, cursorID := utils.DecodeTimeCursor(cursor)
 
-    err := r.db.SelectContext(
-        ctx,
-        &followers,
-        `
+    query := `
         SELECT u.id, u.username, u.name, u.profile_pic, f.created_at AS followed_at
         FROM follows f
         JOIN users u ON f.follower_id = u.id
-        WHERE f.followee_id = $1
-        ORDER BY f.created_at DESC
-        LIMIT $2 OFFSET $3
-        `,
-        userID, limit, offset,
-    )
+        WHERE f.followee_id = $1 
+          AND (f.created_at < $2 OR (f.created_at = $2 AND f.follower_id < $3))
+        ORDER BY f.created_at DESC, f.follower_id DESC
+        LIMIT $4
+    `
+
+    err := r.db.SelectContext(ctx, &followers, query, userID, cursorTime, cursorID, limit+1)
     if err != nil {
-        return nil, 0, err
+        return nil, "", err
     }
 
-    var total int
-    err = r.db.GetContext(
-        ctx,
-        &total,
-        `SELECT COUNT(*) FROM follows WHERE followee_id = $1`,
-        userID,
-    )
+    var nextCursor string
+    if len(followers) > limit {
+		followers = followers[:limit]
+        lastUser := followers[len(followers)-1]
+        nextCursor = utils.EncodeTimeCursor(lastUser.FollowedAt, lastUser.ID)
+    }
 
-    return followers, total, err
+    return followers, nextCursor, nil
 }
 
-func (r *Repository) GetFollowing(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+func (r *Repository) GetFollowing(ctx context.Context, userID, cursor string, limit int) ([]FollowEntry, string, error) {
     following := []FollowEntry{}
+    cursorTime, cursorID := utils.DecodeTimeCursor(cursor)
 
-    err := r.db.SelectContext(
-        ctx,
-        &following,
-        `
+    query := `
         SELECT u.id, u.username, u.name, u.profile_pic, f.created_at AS followed_at
         FROM follows f
         JOIN users u ON f.followee_id = u.id
-        WHERE f.follower_id = $1
-        ORDER BY f.created_at DESC
-        LIMIT $2 OFFSET $3
-        `,
-        userID, limit, offset,
-    )
+        WHERE f.follower_id = $1 
+          AND (f.created_at < $2 OR (f.created_at = $2 AND f.followee_id < $3))
+        ORDER BY f.created_at DESC, f.followee_id DESC
+        LIMIT $4
+    `
+
+    err := r.db.SelectContext(ctx, &following, query, userID, cursorTime, cursorID, limit+1)
     if err != nil {
-        return nil, 0, err
+        return nil, "", err
     }
 
-    var total int
-    err = r.db.GetContext(
-        ctx,
-        &total,
-        `SELECT COUNT(*) FROM follows WHERE follower_id = $1`,
-        userID,
-    )
+    var nextCursor string
+    if len(following) > limit {
+		following = following[:limit]
+        lastUser := following[len(following)-1]
+        nextCursor = utils.EncodeTimeCursor(lastUser.FollowedAt, lastUser.ID)
+    }
 
-    return following, total, err
+    return following, nextCursor, nil
 }
 
 func (r *Repository) IsFollowing(ctx context.Context, followerID, followeeID string) (bool, error) {

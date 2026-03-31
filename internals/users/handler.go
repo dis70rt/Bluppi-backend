@@ -253,7 +253,7 @@ func (h *GrpcHandler) UnfollowUser(ctx context.Context, req *pb.UnfollowUserRequ
 }
 
 func (h *GrpcHandler) GetFollowers(ctx context.Context, req *pb.GetFollowersRequest) (*pb.GetFollowersResponse, error) {
-	followers, total, err := h.service.GetFollowers(ctx, req.UserId, int(req.Limit), int(req.Offset))
+	followers, nextCursor, err := h.service.GetFollowers(ctx, req.UserId, req.Cursor,  int(req.Limit))
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -265,12 +265,13 @@ func (h *GrpcHandler) GetFollowers(ctx context.Context, req *pb.GetFollowersRequ
 
 	return &pb.GetFollowersResponse{
 		Followers: pbFollowers,
-		Total:     int64(total),
+		NextCursor: nextCursor,
+		HasMore: nextCursor != "",
 	}, nil
 }
 
 func (h *GrpcHandler) GetFollowing(ctx context.Context, req *pb.GetFollowingRequest) (*pb.GetFollowingResponse, error) {
-	following, total, err := h.service.GetFollowing(ctx, req.UserId, int(req.Limit), int(req.Offset))
+	following, nextCursor, err := h.service.GetFollowing(ctx, req.UserId, req.Cursor,  int(req.Limit))
 	if err != nil {
 		return nil, h.mapError(err)
 	}
@@ -282,7 +283,8 @@ func (h *GrpcHandler) GetFollowing(ctx context.Context, req *pb.GetFollowingRequ
 
 	return &pb.GetFollowingResponse{
 		Following: pbFollowing,
-		Total:     int64(total),
+		NextCursor: nextCursor,
+		HasMore: nextCursor != "",
 	}, nil
 }
 

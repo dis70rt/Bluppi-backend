@@ -231,24 +231,24 @@ func (s *Service) GetRecentSearches(
 	return s.repo.GetRecentSearches(ctx, userID, limit)
 }
 
-func (s *Service) GetFollowers(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+func (s *Service) GetFollowers(ctx context.Context, userID, cursor string, limit int) ([]FollowEntry, string, error) {
     if userID == "" {
-        return nil, 0, ErrInvalidInput
+        return nil, "", ErrInvalidInput
     }
     if limit <= 0 || limit > 100 {
         limit = 20
     }
-    return s.repo.GetFollowers(ctx, userID, limit, offset)
+    return s.repo.GetFollowers(ctx, userID, cursor, limit)
 }
 
-func (s *Service) GetFollowing(ctx context.Context, userID string, limit, offset int) ([]FollowEntry, int, error) {
+func (s *Service) GetFollowing(ctx context.Context, userID, cursor string, limit int) ([]FollowEntry, string, error) {
     if userID == "" {
-        return nil, 0, ErrInvalidInput
+        return nil, "", ErrInvalidInput
     }
     if limit <= 0 || limit > 100 {
         limit = 20
     }
-    return s.repo.GetFollowing(ctx, userID, limit, offset)
+    return s.repo.GetFollowing(ctx, userID, cursor, limit)
 }
 
 func (s *Service) IsFollowing(ctx context.Context, followerID, followeeID string) (bool, error) {

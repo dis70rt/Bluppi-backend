@@ -12,6 +12,7 @@ message FriendActivity {
     string friend_name = 2;
     string friend_avatar_url = 3;
     string status = 4; // "online" or "offline"
+    string friend_username = 11;
 
     // Track metadata (can be empty if they have no history)
     optional string track_id = 5;

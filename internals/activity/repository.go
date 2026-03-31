@@ -19,6 +19,7 @@ type HydratedUser struct {
     ID         string  `db:"id"`
     Name       string  `db:"name"`
     ProfilePic *string `db:"profile_pic"`
+    Username   string  `db:"username"`
 }
 
 type HydratedTrack struct {
@@ -35,7 +36,7 @@ func (r *Repository) GetUsersByIDs(ctx context.Context, ids []string) (map[strin
     }
 
     var users []HydratedUser
-    err := r.db.SelectContext(ctx, &users, `SELECT id, name, profile_pic FROM users WHERE id = ANY($1)`, pq.Array(ids))
+    err := r.db.SelectContext(ctx, &users, `SELECT id, name, profile_pic, username FROM users WHERE id = ANY($1)`, pq.Array(ids))
     if err != nil {
         return nil, err
     }
