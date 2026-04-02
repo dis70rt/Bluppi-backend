@@ -113,6 +113,8 @@ func (r *Repository) UpdateUser(ctx context.Context, id string, fields map[strin
 		"phone":           true,
 		"profile_pic":     true,
 		"favorite_genres": true,
+		"date_of_birth":   true,
+		"gender":          true,
 	}
 
 	var setClauses []string

@@ -47,7 +47,12 @@ func (s *Service) CreateUser(ctx context.Context, u *User) error {
 		return ErrUserAlreadyExists
 	}
 
-	return s.repo.CreateUser(ctx, u)
+	err := s.repo.CreateUser(ctx, u)
+	if err != nil {
+		return err
+	}
+
+	return s.graphRepo.CreateUserNode(ctx, u.ID)
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id string) (*User, error) {

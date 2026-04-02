@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"time"
 
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/users"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
@@ -18,6 +19,11 @@ func NewGrpcHandler(s *Service) *GrpcHandler {
 }
 
 func (h *GrpcHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.UserResponse, error) {
+	var dob time.Time
+	if req.DateOfBirth != nil {
+		dob = req.DateOfBirth.AsTime()
+	}
+
 	user := &User{
 		ID:             req.Id,
 		Email:          req.Email,
@@ -28,6 +34,8 @@ func (h *GrpcHandler) CreateUser(ctx context.Context, req *pb.CreateUserRequest)
 		Phone:          utils.StringToPtr(req.Phone),
 		ProfilePic:     utils.StringToPtr(req.ProfilePic),
 		FavoriteGenres: req.FavoriteGenres,
+		DateOfBirth:    dob,
+		Gender:         req.Gender,
 	}
 
 	err := h.service.CreateUser(ctx, user)
@@ -85,6 +93,12 @@ func (h *GrpcHandler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	}
 	if len(req.FavoriteGenres) > 0 {
 		fields["favorite_genres"] = req.FavoriteGenres
+	}
+	if req.DateOfBirth != nil {
+		fields["date_of_birth"] = req.DateOfBirth.AsTime()
+	}
+	if req.Gender != nil {
+		fields["gender"] = *req.Gender
 	}
 
 	userID, err := middlewares.GetUserID(ctx)

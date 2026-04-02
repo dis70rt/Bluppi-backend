@@ -15,6 +15,20 @@ func NewGraphRepository(driver neo4j.DriverWithContext) *GraphRepository {
 	return &GraphRepository{driver: driver}
 }
 
+func (g *GraphRepository) CreateUserNode(ctx context.Context, userID string) error {
+	session := g.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
+		query := `MERGE (u:User {id: $user_id})`
+		return tx.Run(ctx, query, map[string]any{
+			"user_id": userID,
+		})
+	})
+
+	return err
+}
+
 func (g *GraphRepository) Follow(ctx context.Context, followerID, followeeID string) error {
 	session := g.driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
