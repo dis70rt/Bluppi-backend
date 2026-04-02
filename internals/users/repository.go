@@ -105,18 +105,31 @@ func (r *Repository) UpdateUser(ctx context.Context, id string, fields map[strin
         return errors.New("no fields to update")
     }
 
-    var setClauses []string
-    var args []interface{}
-    i := 1
+	allowedColumns := map[string]bool{
+		"email":           true,
+		"name":            true,
+		"bio":             true,
+		"country":         true,
+		"phone":           true,
+		"profile_pic":     true,
+		"favorite_genres": true,
+	}
 
-    for key, value := range fields {
-        setClauses = append(setClauses, fmt.Sprintf("%s = $%d", key, i))
-        args = append(args, value)
-        i++
-    }
+	var setClauses []string
+	var args []interface{}
+	i := 1
 
-    args = append(args, id)
-    query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", strings.Join(setClauses, ", "), i)
+	for key, value := range fields {
+		if !allowedColumns[key] {
+			return fmt.Errorf("invalid column name: %s", key)
+		}
+		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", key, i))
+		args = append(args, value)
+		i++
+	}
+
+	args = append(args, id)
+	query := fmt.Sprintf("UPDATE users SET %s WHERE id = $%d", strings.Join(setClauses, ", "), i)
 
     res, err := r.db.ExecContext(ctx, query, args...)
     if err != nil {
