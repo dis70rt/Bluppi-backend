@@ -2,8 +2,10 @@ package middlewares
 
 import (
 	"context"
+	"log"
 	"os"
 	"strings"
+	"sync"
 
 	"firebase.google.com/go/v4/auth"
 	"google.golang.org/grpc"
@@ -15,6 +17,8 @@ import (
 type contextKey string
 
 const UserIDKey contextKey = "user_id"
+
+var mockAuthWarning sync.Once
 
 func UnaryAuthInterceptor(authClient *auth.Client) grpc.UnaryServerInterceptor {
     return func(
@@ -148,9 +152,14 @@ func GetUserID(ctx context.Context) (string, error) {
 }
 
 func getMockUserID(ctx context.Context) string {
-    if os.Getenv("ALLOW_MOCK_AUTH") != "true" {
+    if os.Getenv("ALLOW_MOCK_AUTH") != "true" || os.Getenv("GO_ENV") != "development" {
         return ""
     }
+
+    mockAuthWarning.Do(func() {
+        log.Println("⚠️  WARNING: Mock auth is ENABLED (GO_ENV=development + ALLOW_MOCK_AUTH=true)")
+    })
+
     md, ok := metadata.FromIncomingContext(ctx)
     if !ok {
         return ""
