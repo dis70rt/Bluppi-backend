@@ -87,10 +87,18 @@ func main() {
 
 	routes.Setup(grpcServer, appHandlers)
 
-	log.Printf("🚀 gRPC Server is running on localhost%s", port)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
+	go func() {
+		log.Printf("🚀 gRPC Server is running on localhost%s", port)
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+
+	log.Println("Shutting down gRPC server...")
+	grpcServer.GracefulStop()
+	log.Println("gRPC server safely stopped.")
 }
 
 func getEnv(key, fallback string) string {
