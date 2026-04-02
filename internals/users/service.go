@@ -165,18 +165,25 @@ func (s *Service) Follow(ctx context.Context, followerID, followeeID string) err
         return err
     }
 
-	follower, _ := s.repo.GetUserByID(ctx, followerID)
-	event := &events.UserFollowedEvent{
-		FollowerId: followerID,
-		FollowerName: follower.Name,
-		FollowerAvatar: *follower.ProfilePic,
-		FolloweeId: followeeID,
-		OccurredAt: timestamppb.Now(),
+	follower, err := s.repo.GetUserByID(ctx, followerID)
+	if err == nil && follower != nil {
+		avatar := ""
+		if follower.ProfilePic != nil {
+			avatar = *follower.ProfilePic
+		}
+
+		event := &events.UserFollowedEvent{
+			FollowerId:     followerID,
+			FollowerName:   follower.Name,
+			FollowerAvatar: avatar,
+			FolloweeId:     followeeID,
+			OccurredAt:     timestamppb.Now(),
+		}
+
+		_ = s.eventBus.Publish(ctx, eventbus.UserFollowedTopic, event)
 	}
 
-	_ = s.eventBus.Publish(ctx, eventbus.UserFollowedTopic, event)
-
-	return err
+	return nil
 }
 
 func (s *Service) Unfollow(ctx context.Context, followerID, followeeID string) error {
