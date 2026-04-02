@@ -115,14 +115,15 @@ func extractToken(ctx context.Context) (string, error) {
 
 
 func isPublicEndpoint(method string) bool {
-    publicEndpoints := []string{
-        "/users.UserService/CreateUser",
-        "/users.UserService/CheckUsername",
-        "/users.UserService/CheckEmail",
-        "/users.UserService/GetUserByUsername",
+	publicEndpoints := []string{
+		"/users.UserService/CreateUser",
+		"/users.UserService/CheckUsername",
+		"/users.UserService/CheckEmail",
+		"/users.UserService/GetUserByUsername",
 		"/grpc.health.v1.Health/Check",
-        "/grpc.health.v1.Health/Watch",
-    }
+		"/grpc.health.v1.Health/Watch",
+		"/presences.InternalPresence/RecordHeartbeat",
+	}
 
     for _, endpoint := range publicEndpoints {
         if method == endpoint {
