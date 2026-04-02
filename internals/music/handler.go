@@ -135,12 +135,12 @@ func (h *GrpcHandler) IsTrackLiked(ctx context.Context, req *pb.IsTrackLikedRequ
 }
 
 func (h *GrpcHandler) GetLikedTracks(ctx context.Context, req *pb.GetLikedTracksRequest) (*pb.GetLikedTracksResponse, error) {
-    userID, err := middlewares.GetUserID(ctx)
-    if err != nil {
-        return nil, h.mapError(err)
-    }
+    // userID, err := middlewares.GetUserID(ctx)
+    // if err != nil {
+    //     return nil, h.mapError(err)
+    // }
     
-    entries, nextCursor, total, err := h.service.GetLikedTracks(ctx, userID, req.Cursor, int(req.Limit))
+    entries, nextCursor, total, err := h.service.GetLikedTracks(ctx, req.TargetUserId, req.Cursor, int(req.Limit))
     if err != nil {
         return nil, h.mapError(err)
     }
