@@ -99,5 +99,10 @@ func (c *solrClient) Search(
 		}
 	}
 
-    return ids, sr.NextCursorMark, nil
+    nextCursor := sr.NextCursorMark
+    if nextCursor == cursor {
+        nextCursor = ""
+    }
+
+    return ids, nextCursor, nil
 }

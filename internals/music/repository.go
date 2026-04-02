@@ -332,3 +332,27 @@ func (r *Repository) GetUnseenPopularTracks(ctx context.Context, userID string, 
     err := r.db.SelectContext(ctx, &tracks, query, userID, limit)
     return tracks, err
 }
+
+func (r *Repository) GetTopTracks(
+    ctx context.Context,
+    userID string,
+    since time.Time,
+    limit int,
+) ([]TopTrackEntry, error) {
+    results := []TopTrackEntry{}
+
+    query := `
+        SELECT h.track_id, t.title, t.artists, t.image_small,
+               COUNT(*) AS play_count
+        FROM history_tracks h
+        JOIN tracks t ON h.track_id = t.track_id
+        WHERE h.user_id = $1
+          AND h.played_at >= $2
+        GROUP BY h.track_id, t.title, t.artists, t.image_small
+        ORDER BY play_count DESC
+        LIMIT $3
+    `
+
+    err := r.db.SelectContext(ctx, &results, query, userID, since, limit)
+    return results, err
+}

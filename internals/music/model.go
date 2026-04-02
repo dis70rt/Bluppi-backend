@@ -56,3 +56,11 @@ type UserTrack struct {
     InteractionType string    `db:"interaction_type"`
     InteractedAt    time.Time `db:"interacted_at"`
 }
+
+type TopTrackEntry struct {
+    TrackID    string  `db:"track_id"`
+    Title      string  `db:"title"`
+    Artists    string  `db:"artists"`
+    ImageSmall *string `db:"image_small"`
+    PlayCount  int     `db:"play_count"`
+}

@@ -29,6 +29,9 @@ service TrackService {
   // --- Recommendations ---
   rpc GetRecommendations (GetRecommendationsRequest) returns (GetRecommendationsResponse);
   rpc WeeklyDiscoverTracks (DiscoverTracksRequest) returns (DiscoverTracksResponse);
+
+  // --- Top Tracks (Profile) ---
+  rpc GetUserTopTracks (GetUserTopTracksRequest) returns (GetUserTopTracksResponse);
 }
 
 // =========================================
@@ -208,4 +211,30 @@ message DiscoverTracksResponse {
   repeated TrackSummary tracks = 1;
   string next_cursor = 2;
   bool has_more = 3;
+}
+
+// --- Top Tracks ---
+
+enum TimeRange {
+  TIME_RANGE_ALL_TIME = 0;
+  TIME_RANGE_LAST_7_DAYS = 1;
+  TIME_RANGE_LAST_30_DAYS = 2;
+}
+
+message TopTrackEntry {
+  string track_id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_small = 4;
+  int32 play_count = 5;
+}
+
+message GetUserTopTracksRequest {
+  string target_user_id = 1;
+  int32 limit = 2;
+  TimeRange time_range = 3;
+}
+
+message GetUserTopTracksResponse {
+  repeated TopTrackEntry tracks = 1;
 }

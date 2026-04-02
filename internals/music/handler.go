@@ -2,18 +2,23 @@ package music
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/tracks"
 	"github.com/dis70rt/bluppi-backend/internals/infrastructure/middlewares"
+	"github.com/redis/go-redis/v9"
 )
 
 type GrpcHandler struct {
     pb.UnimplementedTrackServiceServer
     service *Service
+    redis   *redis.Client
 }
 
-func NewGrpcHandler(s *Service) *GrpcHandler {
-    return &GrpcHandler{service: s}
+func NewGrpcHandler(s *Service, redisClient *redis.Client) *GrpcHandler {
+    return &GrpcHandler{service: s, redis: redisClient}
 }
 
 // --- Core Track Reading ---
@@ -233,5 +238,57 @@ func (h *GrpcHandler) WeeklyDiscoverTracks(ctx context.Context, req *pb.Discover
     return &pb.DiscoverTracksResponse{
         Tracks:  pbTracks,
         HasMore: false, 
+    }, nil
+}
+
+// --- Top Tracks (Profile) ---
+
+func (h *GrpcHandler) GetUserTopTracks(ctx context.Context, req *pb.GetUserTopTracksRequest) (*pb.GetUserTopTracksResponse, error) {
+    targetUserID := req.TargetUserId
+    if targetUserID == "" {
+        return nil, h.mapError(ErrInvalidInput)
+    }
+
+    timeRange := req.TimeRange.String()
+    limit := int(req.Limit)
+    if limit <= 0 || limit > 50 {
+        limit = 3
+    }
+
+    // --- Redis cache lookup ---
+    cacheKey := fmt.Sprintf("top_tracks:%s:%s:%d", targetUserID, timeRange, limit)
+
+    cached, err := h.redis.Get(ctx, cacheKey).Bytes()
+    if err == nil {
+        var cachedResp pb.GetUserTopTracksResponse
+        var entries []TopTrackEntry
+        if json.Unmarshal(cached, &entries) == nil {
+            pbEntries := make([]*pb.TopTrackEntry, len(entries))
+            for i := range entries {
+                pbEntries[i] = h.mapTopTrackEntryToProto(&entries[i])
+            }
+            cachedResp.Tracks = pbEntries
+            return &cachedResp, nil
+        }
+    }
+
+    // --- Cache miss: query DB ---
+    entries, err := h.service.GetUserTopTracks(ctx, targetUserID, timeRange, limit)
+    if err != nil {
+        return nil, h.mapError(err)
+    }
+
+    // Cache the result for 12 hours
+    if data, err := json.Marshal(entries); err == nil {
+        h.redis.Set(ctx, cacheKey, data, 12*time.Hour)
+    }
+
+    pbEntries := make([]*pb.TopTrackEntry, len(entries))
+    for i := range entries {
+        pbEntries[i] = h.mapTopTrackEntryToProto(&entries[i])
+    }
+
+    return &pb.GetUserTopTracksResponse{
+        Tracks: pbEntries,
     }, nil
 }

@@ -122,6 +122,20 @@ func (h *GrpcHandler) mapTrackToSummaryProto(t *Track) *pb.TrackSummary {
     }
 }
 
+func (h *GrpcHandler) mapTopTrackEntryToProto(e *TopTrackEntry) *pb.TopTrackEntry {
+    if e == nil {
+        return nil
+    }
+
+    return &pb.TopTrackEntry{
+        TrackId:    e.TrackID,
+        Title:      e.Title,
+        Artist:     e.Artists,
+        ImageSmall: ptrToString(e.ImageSmall),
+        PlayCount:  int32(e.PlayCount),
+    }
+}
+
 // ----------------- Helper Functions -----------------
 
 func ptrToString(s *string) string {

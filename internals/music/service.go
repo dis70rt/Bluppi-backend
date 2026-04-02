@@ -259,3 +259,33 @@ func (s *Service) WeeklyDiscoverTracks(ctx context.Context, userID string, limit
 
     return discoveredTracks, nil
 }
+
+// ----------------- Top Tracks (Profile) -----------------
+
+func (s *Service) GetUserTopTracks(
+    ctx context.Context,
+    userID string,
+    timeRange string,
+    limit int,
+) ([]TopTrackEntry, error) {
+    if userID == "" {
+        return nil, ErrInvalidInput
+    }
+
+    if limit <= 0 || limit > 50 {
+        limit = 3
+    }
+
+    var since time.Time
+    switch timeRange {
+    case "LAST_7_DAYS":
+        since = time.Now().AddDate(0, 0, -7)
+    case "LAST_30_DAYS":
+        since = time.Now().AddDate(0, 0, -30)
+    default:
+        // ALL_TIME — use zero time to match everything
+        since = time.Time{}
+    }
+
+    return s.repo.GetTopTracks(ctx, userID, since, limit)
+}

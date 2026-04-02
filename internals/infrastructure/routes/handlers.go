@@ -45,7 +45,7 @@ func BuildHandlers(ctx context.Context, db *sqlx.DB, redis *redis.Client, memGra
 	trackRepo := music.NewRepository(db, solr)
 	trackGraphRepo := music.NewGraphRepository(memGraph)
 	trackService := music.NewService(trackRepo, trackGraphRepo)
-	trackHandler := music.NewGrpcHandler(trackService)
+	trackHandler := music.NewGrpcHandler(trackService, redis)
 
 	// --- Party Module ---
 	partyRepo := party.NewRepository(db)
