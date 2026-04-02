@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/dis70rt/bluppi-backend/internals/gateway"
 	pb "github.com/dis70rt/bluppi-backend/internals/gen/presences"
@@ -28,42 +29,44 @@ import (
 // }
 
 func main() {
+	middlewares.InitLogger()
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	redisCfg := database.LoadRedisConfig()
 	redisWrapper, err := database.NewRedis(redisCfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		log.Fatal().Err(err).Msg("Failed to connect to Redis")
 	}
 	defer redisWrapper.Close()
-	log.Println("Redis connected successfully")
+	log.Info().Msg("Redis connected successfully")
 
 	authClient, err := firebase.InitAuth()
 	if err != nil {
-		log.Fatalf("Failed to initialize Firebase Auth: %v", err)
+		log.Fatal().Err(err).Msg("Failed to initialize Firebase Auth")
 	}
-	log.Println("Firebase Auth initialized")
+	log.Info().Msg("Firebase Auth initialized")
 
 	certFile := getEnv("TLS_CERT_FILE", "certs/server.crt")
 	keyFile := getEnv("TLS_KEY_FILE", "certs/server.key")
 
 	clientCreds, err := credentials.NewClientTLSFromFile(certFile, "")
 	if err != nil {
-		log.Fatalf("Failed to load client TLS credentials: %v", err)
+		log.Fatal().Err(err).Msg("Failed to load client TLS credentials")
 	}
 
 	// Server Credentials (used to secure the GATEWAY itself)
 	serverCreds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
 	if err != nil {
-		log.Fatalf("Failed to load server TLS credentials: %v", err)
+		log.Fatal().Err(err).Msg("Failed to load server TLS credentials")
 	}
 
 	// The internal gRPC API defaults to localhost:50051
 	presenceServiceAddr := getEnv("PRESENCE_INTERNAL_URL", "localhost:50051")
 	internalConn, err := grpc.NewClient(presenceServiceAddr, grpc.WithTransportCredentials(clientCreds))
 	if err != nil {
-		log.Fatalf("did not connect to internal presence service: %v", err)
+		log.Fatal().Err(err).Msg("did not connect to internal presence service")
 	}
 	defer internalConn.Close()
 	internalPresenceClient := pb.NewInternalPresenceClient(internalConn)
@@ -74,14 +77,14 @@ func main() {
 	gatewayServer := gateway.NewServer(connManager, internalPresenceClient)
 
 	go func() {
-		log.Println("Starting Redis PubSub Events Listener...")
+		log.Info().Msg("Starting Redis PubSub Events Listener...")
 		eventsListener.Start(ctx)
 	}()
 
 	port := getEnv("GATEWAY_PORT", ":50050")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		log.Fatalf("failed to listen on port %s: %v", port, err)
+		log.Fatal().Err(err).Msgf("failed to listen on port %s", port)
 	}
 
 	kaep := keepalive.EnforcementPolicy{
@@ -99,24 +102,28 @@ func main() {
 		grpc.Creds(serverCreds),
 		grpc.KeepaliveEnforcementPolicy(kaep),
 		grpc.KeepaliveParams(kasp),
-		grpc.UnaryInterceptor(middlewares.UnaryAuthInterceptor(authClient)),
+		grpc.ChainUnaryInterceptor(
+			middlewares.RecoveryInterceptor(),
+			middlewares.LoggingInterceptor(),
+			middlewares.UnaryAuthInterceptor(authClient),
+		),
 		grpc.StreamInterceptor(middlewares.StreamAuthInterceptor(authClient)),
 	)
 
 	pb.RegisterPresenceGatewayServer(grpcServer, gatewayServer)
 
 	go func() {
-		log.Printf("Presence Gateway gRPC Server is running on localhost%s", port)
+		log.Info().Msgf("Presence Gateway gRPC Server is running on localhost%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve gRPC: %v", err)
+			log.Fatal().Err(err).Msg("failed to serve gRPC")
 		}
 	}()
 
 	<-ctx.Done()
 
-	log.Println("Shutting down gateway server...")
+	log.Info().Msg("Shutting down gateway server...")
 	grpcServer.GracefulStop()
-	log.Println("Gateway server safely stopped.")
+	log.Info().Msg("Gateway server safely stopped.")
 }
 
 func getEnv(key, fallback string) string {

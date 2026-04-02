@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/rs/zerolog/log"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -20,36 +20,38 @@ import (
 )
 
 func main() {
+	middlewares.InitLogger()
+
 	cfg := database.LoadConfig()
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	dbWrapper, err := database.New(cfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatal().Err(err).Msg("Failed to connect to database")
 	}
 	defer dbWrapper.Close()
-	log.Println("PostgreSQL connected successfully")
+	log.Info().Msg("PostgreSQL connected successfully")
 
 	redisCfg := database.LoadRedisConfig()
 	redisWrapper, err := database.NewRedis(redisCfg)
 	if err != nil {
-		log.Fatalf("Failed to connect to Redis: %v", err)
+		log.Fatal().Err(err).Msg("Failed to connect to Redis")
 	}
 	defer redisWrapper.Close()
-	log.Println("Redis connected successfully")
+	log.Info().Msg("Redis connected successfully")
 
 	authClient, err := firebase.InitAuth()
 	if err != nil {
-		log.Fatalf("Failed to initialize Firebase: %v", err)
+		log.Fatal().Err(err).Msg("Failed to initialize Firebase")
 	}
-	log.Println("Firebase Auth initialized")
+	log.Info().Msg("Firebase Auth initialized")
 
 	fcmClient, err := firebase.InitFCM()
 	if err != nil {
-		log.Fatalf("Failed to initialize Firebase FCM: %v", err)
+		log.Fatal().Err(err).Msg("Failed to initialize Firebase FCM")
 	}
-	log.Println("Firebase FCM initialized")
+	log.Info().Msg("Firebase FCM initialized")
 
 	mgCfg := database.MemgraphConfig{
         URI:      getEnv("MEMGRAPH_URI", "bolt://localhost:7687"),
@@ -58,17 +60,17 @@ func main() {
     }
     mgWrapper, err := database.NewMemgraph(mgCfg)
     if err != nil {
-        log.Fatalf("Failed to connect to Memgraph: %v", err)
+        log.Fatal().Err(err).Msg("Failed to connect to Memgraph")
     }
     defer mgWrapper.Close(ctx)
-    log.Println("Memgraph connected successfully")
+    log.Info().Msg("Memgraph connected successfully")
 
 	appHandlers := routes.BuildHandlers(ctx, dbWrapper.DB, redisWrapper.Client, mgWrapper.Driver, fcmClient)
 
 	port := getEnv("PORT", ":50051")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
-		log.Fatalf("Failed to listen on %s: %v", port, err)
+		log.Fatal().Err(err).Msgf("Failed to listen on %s", port)
 	}
 
 	certFile := getEnv("TLS_CERT_FILE", "certs/server.crt")
@@ -76,29 +78,33 @@ func main() {
 
 	creds, err := credentials.NewServerTLSFromFile(certFile, keyFile)
     if err != nil {
-        log.Fatalf("Failed to load TLS credentials: %v", err)
+        log.Fatal().Err(err).Msg("Failed to load TLS credentials")
     }
 
 	grpcServer := grpc.NewServer(
 		grpc.Creds(creds),
-		grpc.UnaryInterceptor(middlewares.UnaryAuthInterceptor(authClient)),
+		grpc.ChainUnaryInterceptor(
+			middlewares.RecoveryInterceptor(),
+			middlewares.LoggingInterceptor(),
+			middlewares.UnaryAuthInterceptor(authClient),
+		),
 		grpc.StreamInterceptor(middlewares.StreamAuthInterceptor(authClient)),
 	)
 
 	routes.Setup(grpcServer, appHandlers)
 
 	go func() {
-		log.Printf("🚀 gRPC Server is running on localhost%s", port)
+		log.Info().Msgf("🚀 gRPC Server is running on localhost%s", port)
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
+			log.Fatal().Err(err).Msg("Failed to serve")
 		}
 	}()
 
 	<-ctx.Done()
 
-	log.Println("Shutting down gRPC server...")
+	log.Info().Msg("Shutting down gRPC server...")
 	grpcServer.GracefulStop()
-	log.Println("gRPC server safely stopped.")
+	log.Info().Msg("gRPC server safely stopped.")
 }
 
 func getEnv(key, fallback string) string {

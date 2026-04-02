@@ -2,9 +2,9 @@ package middlewares
 
 import (
 	"context"
-	"log"
 	"runtime/debug"
 
+	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -19,7 +19,11 @@ func RecoveryInterceptor() grpc.UnaryServerInterceptor {
 		
 		defer func() {
 			if r := recover(); r != nil {
-				log.Printf("[PANIC RECOVERED] %v\n%s", r, debug.Stack())
+				log.Error().
+					Interface("panic", r).
+					Str("stack", string(debug.Stack())).
+					Str("method", info.FullMethod).
+					Msg("PANIC RECOVERED")
 				err = status.Errorf(codes.Internal, "an unexpected error occurred")
 			}
 		}()
