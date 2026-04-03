@@ -1,0 +1,15 @@
+/internals/gen/
+.env
+/searchMusic
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*adminsdk*
+
+# Cloudflare Tunnel Secrets
+cloudflared/*.json
+cloudflared/*.pem
+
+certs/

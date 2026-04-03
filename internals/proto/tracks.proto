@@ -1,0 +1,240 @@
+syntax = "proto3";
+
+package tracks;
+
+option go_package = "./internals/gen/tracks";
+
+import "google/protobuf/timestamp.proto";
+
+service TrackService {
+  // --- Core Track CRUD ---
+  rpc GetTrack (GetTrackRequest) returns (TrackResponse);
+
+  // --- Search & Discovery ---
+  rpc SearchTracks (SearchTracksRequest) returns (SearchTracksResponse);
+  rpc GetPopularTracks (GetPopularTracksRequest) returns (GetTracksResponse);
+  rpc GetTracksByGenre (GetTracksByGenreRequest) returns (GetTracksResponse);
+
+  // --- User Track Interactions ---
+  rpc LikeTrack (LikeTrackRequest) returns (StatusResponse);
+  rpc UnlikeTrack (UnlikeTrackRequest) returns (StatusResponse);
+  rpc GetLikedTracks (GetLikedTracksRequest) returns (GetLikedTracksResponse);
+  rpc IsTrackLiked (IsTrackLikedRequest) returns (IsTrackLikedResponse);
+
+  // --- Track History ---
+  rpc AddTrackToHistory (AddTrackToHistoryRequest) returns (StatusResponse);
+  rpc GetTrackHistory (GetTrackHistoryRequest) returns (GetTrackHistoryResponse);
+  rpc ClearTrackHistory (ClearTrackHistoryRequest) returns (StatusResponse);
+
+  // --- Recommendations ---
+  rpc GetRecommendations (GetRecommendationsRequest) returns (GetRecommendationsResponse);
+  rpc WeeklyDiscoverTracks (DiscoverTracksRequest) returns (DiscoverTracksResponse);
+
+  // --- Top Tracks (Profile) ---
+  rpc GetUserTopTracks (GetUserTopTracksRequest) returns (GetUserTopTracksResponse);
+}
+
+// =========================================
+// Core Messages
+// =========================================
+
+message Track {
+  string id = 1;
+  string title = 2;
+  string artist = 3;
+  int32 duration_ms = 5;
+  repeated string genres = 6;
+  string image_small = 7;
+  string image_large = 8;
+  string preview_url = 9;
+  string video_id = 10;
+
+  int64 listeners = 11;
+  int64 play_count = 12;
+  
+  int32 popularity = 13;
+  google.protobuf.Timestamp created_at = 14;
+}
+
+message SearchTrack {
+  string id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_small = 5;
+  string preview_url = 6;
+}
+
+message TrackResponse {
+  Track track = 1;
+}
+
+message GetTrackRequest {
+  string track_id = 1;
+}
+
+// --- Search & Discovery ---
+
+message SearchTracksRequest {
+  string query = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message SearchTracksResponse {
+  repeated SearchTrack tracks = 1;
+  string query = 2;
+  int32 limit = 3;
+  string next_cursor = 4;
+}
+
+message GetPopularTracksRequest {
+  int32 limit = 1;
+}
+
+message GetTracksByGenreRequest {
+  string genre = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetTracksResponse {
+  repeated Track tracks = 1;
+  int64 total = 2;
+}
+
+// --- User Interactions ---
+
+message LikeTrackRequest {
+  // string user_id = 1;
+  string track_id = 2;
+}
+
+message UnlikeTrackRequest {
+  // string user_id = 1;
+  string track_id = 2;
+}
+
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetLikedTracksRequest {
+  string target_user_id = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message LikedTrackEntry {
+  string track_id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_small = 5;
+  google.protobuf.Timestamp liked_at = 6;
+}
+
+message GetLikedTracksResponse {
+  repeated LikedTrackEntry tracks = 1;
+  int64 total = 2;
+  string next_cursor = 3;
+  bool has_more = 4;
+}
+
+message IsTrackLikedRequest {
+  // string user_id = 1;
+  string track_id = 2;
+}
+
+message IsTrackLikedResponse {
+  bool is_liked = 1;
+}
+
+// --- Track History ---
+
+message AddTrackToHistoryRequest {
+  // string user_id = 1;
+  string track_id = 2;
+}
+
+message GetTrackHistoryRequest {
+  // string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message HistoryTrackEntry {
+  string track_id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_large = 4;
+  string image_small = 5;
+  google.protobuf.Timestamp played_at = 6;
+}
+
+message GetTrackHistoryResponse {
+  repeated HistoryTrackEntry history = 1;
+  int64 total = 2;
+}
+
+message ClearTrackHistoryRequest {
+  // string user_id = 1;
+}
+
+// --- Recommendations ---
+
+message GetRecommendationsRequest {
+  string video_id = 1;
+  int32 limit = 2;
+}
+
+message GetRecommendationsResponse {
+  repeated Track tracks = 1;
+}
+
+message TrackSummary {
+  string id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_url = 4;
+  string preview_url = 5;
+
+  optional int32 social_count = 6;
+  optional string social_context = 7;
+}
+
+message DiscoverTracksRequest {
+  int32 limit = 1;
+  string next_cursor = 2;
+}
+
+message DiscoverTracksResponse {
+  repeated TrackSummary tracks = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}
+
+// --- Top Tracks ---
+
+enum TimeRange {
+  TIME_RANGE_ALL_TIME = 0;
+  TIME_RANGE_LAST_7_DAYS = 1;
+  TIME_RANGE_LAST_30_DAYS = 2;
+}
+
+message TopTrackEntry {
+  string track_id = 1;
+  string title = 2;
+  string artist = 3;
+  string image_small = 4;
+  int32 play_count = 5;
+}
+
+message GetUserTopTracksRequest {
+  string target_user_id = 1;
+  int32 limit = 2;
+  TimeRange time_range = 3;
+}
+
+message GetUserTopTracksResponse {
+  repeated TopTrackEntry tracks = 1;
+}

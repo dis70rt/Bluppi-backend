@@ -1,0 +1,171 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: bluppi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      CHAT_DB_NAME: ${CHAT_DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - /data/pgdata:/var/lib/postgresql/data
+
+    networks:
+      - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  
+  bluppi-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: bluppi-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      memgraph:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TLS_CERT_FILE=/certs/server.crt
+      - TLS_KEY_FILE=/certs/server.key
+    volumes:
+      - ./bluppi-app-firebase-adminsdk-fbsvc-05ec1a0ad8.json:/app/firebase-credentials.json:ro
+      - ./certs:/certs:ro
+    ports:
+      - "50051:50051"
+    networks:
+      - cloudflared
+
+  solr:
+    image: solr:9.10.1
+    container_name: bluppi-solr
+    restart: unless-stopped
+    ports:
+      - "8983:8983"
+    volumes:
+      - /data/solr-data:/var/solr
+    environment:
+      SOLR_JAVA_MEM: "-Xms512m -Xmx1g" # Reduce memory consumption (2GB)
+    networks:
+      - cloudflared
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3" 
+  
+  redis:
+    image: redis:7-alpine
+    container_name: bluppi-redis
+    networks:
+      - cloudflared
+    ports:
+      - "${REDIS_PORT}:6379"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  audio-api:
+    build:
+      context: ./audio
+      dockerfile: Dockerfile
+    container_name: bluppi-audio-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env
+    ports:
+      - "8001:8000"
+    networks:
+      - cloudflared
+
+  memgraph:
+    image: memgraph/memgraph-mage:latest
+    container_name: bluppi-memgraph
+    restart: unless-stopped
+    ports:
+      - "7687:7687"
+    volumes:
+      - /data/memgraph-data:/var/lib/memgraph
+      - /data/memgraph-log:/var/log/memgraph
+
+    networks:
+      - cloudflared
+    healthcheck:
+      test: ["CMD-SHELL", "mgconsole 'RETURN 1;' > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  bluppi-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: bluppi-gateway
+    depends_on:
+      - bluppi-api
+      - redis
+    env_file:
+      - .env
+    volumes:
+      - ./bluppi-app-firebase-adminsdk-fbsvc-05ec1a0ad8.json:/app/firebase-credentials.json:ro
+      - ./certs:/certs:ro
+    ports:
+      - "50050:50050"
+    environment:
+      - PRESENCE_INTERNAL_URL=bluppi-api:50051
+      - TLS_CERT_FILE=/certs/server.crt
+      - TLS_KEY_FILE=/certs/server.key
+    networks:
+      - cloudflared
+
+  tunnel:
+    container_name: bluppi-tunnel
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --protocol http2 --ha-connections 1 --config /etc/cloudflared/config.yml run
+    restart: unless-stopped
+    networks:
+      - cloudflared
+    depends_on:
+      - bluppi-api
+      - bluppi-gateway
+      - audio-api
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+
+# Remove this in production
+  # lab:
+  #   image: memgraph/lab:latest
+  #   container_name: memgraph-lab
+  #   pull_policy: always
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - memgraph
+  #   environment:
+  #     - QUICK_CONNECT_MG_HOST=bluppi-memgraph
+  #     - QUICK_CONNECT_MG_PORT=7687
+  #   networks:
+  #     - cloudflared
+
+networks:
+  cloudflared:
+    name: cloudflared

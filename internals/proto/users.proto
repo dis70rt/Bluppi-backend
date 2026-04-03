@@ -1,0 +1,243 @@
+syntax = "proto3";
+
+package users;
+
+option go_package = "./internals/gen/users";
+
+import "google/protobuf/timestamp.proto";
+
+service UserService {
+  // --- Core User CRUD ---
+  rpc CreateUser (CreateUserRequest) returns (UserResponse);
+  rpc GetUserById (GetUserByIdRequest) returns (UserResponse);
+  rpc GetUserByUsername (GetUserByUsernameRequest) returns (UserResponse);
+  rpc UpdateUser (UpdateUserRequest) returns (UserResponse);
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  
+  // --- Checks & Search ---
+  rpc SearchUsers (SearchUsersRequest) returns (SearchUsersResponse);
+  rpc CheckUsername (CheckUsernameRequest) returns (CheckExistenceResponse);
+  rpc CheckEmail (CheckEmailRequest) returns (CheckExistenceResponse);
+  rpc CheckUserExists (CheckUserRequest) returns (CheckExistenceResponse);
+
+  // --- Stats & History ---
+  rpc GetUserStats (GetUserStatsRequest) returns (UserStatsResponse);
+  rpc AddRecentSearch (AddRecentSearchRequest) returns (StatusResponse);
+  rpc GetRecentSearches (GetRecentSearchesRequest) returns (RecentSearchesResponse);
+
+  // --- Follow System ---
+  rpc FollowUser (FollowUserRequest) returns (StatusResponse);
+  rpc UnfollowUser (UnfollowUserRequest) returns (StatusResponse);
+  rpc GetFollowers (GetFollowersRequest) returns (GetFollowersResponse);
+  rpc GetFollowing (GetFollowingRequest) returns (GetFollowingResponse);
+  rpc IsFollowing (IsFollowingRequest) returns (IsFollowingResponse);
+
+  rpc GetSuggestedFriends (SuggestFriendsRequest) returns (SuggestFriendsResponse);
+}
+
+// =========================================
+// Messages
+// =========================================
+
+message User {
+  string id = 1;
+  string email = 2;
+  string username = 3;
+  string name = 4;
+  string bio = 5;
+  string country = 6;
+  string phone = 7;
+  string profile_pic = 8;
+  repeated string favorite_genres = 9;
+  int32 follower_count = 10;
+  int32 following_count = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp date_of_birth = 13;
+  string gender = 14;
+}
+
+// --- Requests & Responses ---
+
+message CreateUserRequest {
+  string email = 1;
+  string username = 2;
+  string name = 3;
+  string bio = 4;
+  string country = 5;
+  string phone = 6;
+  string profile_pic = 7;
+  repeated string favorite_genres = 8;
+  // Auth provider ID (passed from middleware/context usually, but explicitly here for creation)
+  string id = 9; 
+  google.protobuf.Timestamp date_of_birth = 10;
+  string gender = 11;
+}
+
+message UserResponse {
+  User user = 1;
+}
+
+message GetUserByIdRequest {
+  string user_id = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
+}
+
+message UpdateUserRequest {
+  // string user_id = 1;
+  // mimicking PATCH behavior
+  optional string email = 2;
+  optional string name = 3;
+  optional string bio = 4;
+  optional string country = 5;
+  optional string phone = 6;
+  optional string profile_pic = 7;
+  repeated string favorite_genres = 8;
+  optional google.protobuf.Timestamp date_of_birth = 9;
+  optional string gender = 10;
+}
+
+message DeleteUserRequest {
+  // string user_id = 1;
+}
+
+message DeleteUserResponse {
+  string message = 1;
+}
+
+// --- Search & Checks ---
+
+message SearchUsersRequest {
+  string query = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message SearchUsersResponse {
+  repeated User users = 1;
+  int64 total = 2;
+}
+
+message CheckUsernameRequest {
+  string username = 1;
+}
+
+message CheckEmailRequest {
+  string email = 1;
+}
+
+message CheckUserRequest {
+  string id = 1;
+}
+
+message CheckExistenceResponse {
+  bool exists = 1;
+}
+
+message StatusResponse {
+  string message = 1;
+  bool success = 2;
+}
+
+// --- Stats & History ---
+
+message GetUserStatsRequest {
+  string user_id = 1;
+}
+
+message UserStatsResponse {
+  int32 follower_count = 1;
+  int32 following_count = 2;
+  // Add other stats calculated in your DB here
+}
+
+message AddRecentSearchRequest {
+  string user_id = 1;
+  string query = 2;
+}
+
+message GetRecentSearchesRequest {
+  // string user_id = 1;
+  int32 limit = 2;
+}
+
+message RecentSearchEntry {
+  string query = 1;
+  google.protobuf.Timestamp searched_at = 2;
+}
+
+message RecentSearchesResponse {
+  repeated RecentSearchEntry searches = 1;
+}
+
+message FollowUserRequest {
+  // string follower_id = 1;
+  string followee_id = 2;
+}
+
+message UnfollowUserRequest {
+  // string follower_id = 1;
+  string followee_id = 2;
+}
+
+message IsFollowingRequest {
+  // string follower_id = 1;
+  string followee_id = 2;
+}
+
+message IsFollowingResponse {
+  bool is_following = 1;
+}
+
+message GetFollowersRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message GetFollowingRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message FollowUserEntry {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string profile_pic = 4;
+  google.protobuf.Timestamp followed_at = 5;
+}
+
+message GetFollowersResponse {
+  repeated FollowUserEntry followers = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}
+
+message GetFollowingResponse {
+  repeated FollowUserEntry following = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}
+
+message UserSummary {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string profile_pic = 4;
+  optional string suggestion_reason = 5;
+}
+
+message SuggestFriendsRequest {
+  int32 limit = 1;
+  string next_cursor = 2;
+}
+
+message SuggestFriendsResponse {
+  repeated UserSummary users = 1;
+  string next_cursor = 2;
+  bool has_more = 3;
+}

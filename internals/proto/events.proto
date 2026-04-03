@@ -1,0 +1,45 @@
+syntax = "proto3";
+package events;
+
+option go_package = "./internals/gen/events";
+
+import "google/protobuf/timestamp.proto";
+
+message UserFollowedEvent {
+  string follower_id = 1;
+  string follower_name = 2;
+  string follower_avatar = 3;
+  
+  string followee_id = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+}
+
+// message FollowRequestEvent {
+//   string requester_id = 1;
+//   string requester_name = 2;
+//   string target_user_id = 3;
+//   google.protobuf.Timestamp occurred_at = 4;
+// }
+
+
+message PartyInviteEvent {
+  string room_id = 1;
+  string room_name = 2;
+  
+  string inviter_id = 3;
+  string inviter_name = 4;
+  string inviter_avatar = 5;
+  
+  string target_user_id = 6;
+  google.protobuf.Timestamp occurred_at = 7;
+}
+
+message FollowerListeningEvent {
+  string broadcaster_id = 1;
+  string broadcaster_name = 2;
+  string room_id = 3;
+  string track_name = 4;       // e.g., "Saikat started listening to Attack on Titan OST"
+  
+  repeated string target_follower_ids = 5; 
+  google.protobuf.Timestamp occurred_at = 6;
+}
