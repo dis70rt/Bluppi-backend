@@ -1,405 +1,275 @@
-# Bluppi Distributed Audio Synchronization
-
-**Low-Echo / Low-Phasing Playback Architecture**
-
----
-
-## 1. Perceptual & Acoustic Constraints
-
-Human perception defines hard failure limits for distributed playback.
-
-If inter-device delay exceeds ~40 ms, the auditory system no longer fuses signals:
-
-* Sound becomes a **distinct echo**
-* Unified amplification illusion collapses
-
-Reference:
-
-* Haas / Precedence Effect
-  [https://www.wikiaudio.org/haas-effect/](https://www.wikiaudio.org/haas-effect/)
-
----
-
-### Comb Filtering & Phasing Artifacts
-
-Complex music contains broadband frequency content. Even tiny timing errors produce:
-
-* Phase cancellations
-* “Hollow” or “swishy” sound
-* Artificial spatial coloration
-
-Avoiding comb filtering requires **extremely tight alignment**.
-
-Reference (IDMS precision & Wi-Fi synchronization):
-
-* OpenWiFiSync Research
-  [https://www.researchgate.net/publication/384887259_OpenWiFiSync_Open_Source_Implementation_of_a_Clock_Synchronization_Algorithm_using_Wi-Fi](https://www.researchgate.net/publication/384887259_OpenWiFiSync_Open_Source_Implementation_of_a_Clock_Synchronization_Algorithm_using_Wi-Fi)
-
----
-
-### Empirical Delay Thresholds
-
-| Acoustic Phenomenon | Time Delay Range | Perceptual Result                 | Engineering Implication              |
-| ------------------- | ---------------- | --------------------------------- | ------------------------------------ |
-| **Comb Filtering**  | 0.1 – 15 ms      | Hollow / phase coloration         | Requires microsecond-scale stability |
-| **Haas Fusion**     | 15 – 35 ms       | Single fused image, widened field | Perceptually usable, not coherent    |
-| **Discrete Echo**   | > 40 ms          | Audible repetition                | System failure                       |
-
-Reference (psychoacoustics & delay perception):
-
-* Lund University Thesis
-  [https://lup.lub.lu.se/luur/download?func=downloadFile&recordOId=8052964&fileOId=8053165](https://lup.lub.lu.se/luur/download?func=downloadFile&recordOId=8052964&fileOId=8053165)
-
----
-
-## 2. Clock Instability Reality
-
-Every client device contains imperfect oscillators.
-
-Even identical hardware exhibits:
-
-* Frequency deviation (clock skew)
-* Absolute time divergence (clock offset)
-
-Clock model:
-
-$$
-C_i(t) = \alpha_i t + \theta_i
-$$
-
-Where:
-
-* ( $\alpha_i$ ) → clock skew
-* ( $\theta_i$ ) → clock offset
-
-References:
-
-* Clock Drift & Synchronization Limits
-  [https://arxiv.org/pdf/1607.03830](https://arxiv.org/pdf/1607.03830)
-
-* Offset vs Skew Explanation
-  [https://www.baeldung.com/cs/clock-offset-skew-difference](https://www.baeldung.com/cs/clock-offset-skew-difference)
-
-* Wireless Clock Sync Accuracy Limits
-  [https://arxiv.org/pdf/2212.07138](https://arxiv.org/pdf/2212.07138)
-
----
-
-## 3. System Design Principles
-
-Blupii avoids network-driven playback decisions.
-
-Key rules:
-
-1. Playback always scheduled in the future
-2. Clients estimate offset & skew locally
-3. Network delay never directly controls audio timing
-4. Playback rate absorbs residual error
-
----
-
-## 4. Initialization Phase (Burst Sampling)
-
-At session start:
-
-* Client transmits **10 rapid synchronization probes**
-* Objective → isolate minimum-delay path
-
-Each probe uses a PTP-style exchange.
-
-References:
-
-* Precision Time Protocol (IEEE 1588 Concepts)
-
----
-
-### Timestamp Exchange
-
-Four timestamps:
-
-* ( $t_1$ ) → client send
-* ( $t_2$ ) → server receive
-* ( $t_3$ ) → server transmit
-* ( $t_4$ ) → client receive
-
-Delay estimation:
-
-$$
-delay = \frac{(t_2 - t_1) + (t_4 - t_3)}{2}
-$$
-
-Offset estimation:
-
-$$
-offset = \frac{(t_2 - t_1) - (t_4 - t_3)}{2}
-$$
-
----
-
-## 5. Jitter Suppression (Critical Step)
-
-Mobile networks introduce stochastic queuing delays.
-
-Strategy:
-
-1. Collect burst delay samples
-2. Select **minimum-delay measurement**
-
-Reasoning:
-
-* Queuing only increases latency
-* Minimum delay approximates physical propagation
-
-Conceptually aligned with first-arrival dominance methods.
-
-Reference:
-
-* RMTS vs FTSP Behavior (Wireless Sensor Networks)
-  [https://arxiv.org/pdf/1607.03830](https://arxiv.org/pdf/1607.03830)
-
----
-
-## 6. Drift / Skew Estimation
-
-Offsets evolve linearly under skew:
-
-$$
-offset(t) \approx (\alpha_i - 1)t + \theta_i
-$$
-
-Skew approximation:
-
-$$
-\alpha_i \approx 1 + \frac{offset(t_2) - offset(t_1)}{t_2 - t_1}
-$$
-
-Continuous refinement required.
-
----
-
-## 7. Kalman Filter State Tracking (Recommended)
-
-Clock behavior is noisy and dynamic.
-
-State vector:
-
-$$
-x(k) =
-\begin{bmatrix}
-\theta(k) \
-\alpha(k)
-\end{bmatrix}
-$$
-
-Prediction:
-
-$$
-x(k) =
-\begin{bmatrix}
-1 & \tau_0 \
-0 & 1
-\end{bmatrix}
-x(k-1) + \omega(k)
-$$
-
-Measurement:
-
-$$
-z(k) = \theta(k) + v(k)
-$$
-
-Reference:
-
-* Kalman-Based Clock Synchronization
-  [https://www.mdpi.com/1424-8220/21/13/4426/pdf](https://www.mdpi.com/1424-8220/21/13/4426/pdf)
-
----
-
-## 8. Playback Scheduling Strategy
-
-Server never issues immediate play commands.
-
-Instead:
-
-$$
-T_{play} = T_s + \Delta
-$$
-
-Where:
-
-* ( $\Delta$ ) = 4–5 seconds future horizon
-
-Benefits:
-
-* Network jitter irrelevant to start alignment
-* Deterministic scheduling
-
----
-
-## 9. Local Playback Time Conversion
-
-Client mapping:
-
-$$
-t_{local} = \frac{T_{play} - \theta_i}{\alpha_i}
-$$
-
-Playback is clock-corrected, not packet-timed.
-
----
-
-## 10. Drift & Phasing Control
-
-Clock drift is permanent.
-
-Hard corrections cause audible artifacts.
-Use **slow playback rate correction**:
-
-$$
-rate_{adj} = 1 - k \cdot error
-$$
-
-Reference concepts:
-
-* Oscillator Noise & Drift Behavior
-  [https://arxiv.org/pdf/2212.07138](https://arxiv.org/pdf/2212.07138)
-
----
-
-## 11. Error Threshold Handling
-
-| Alignment Error | Action                   |
-| --------------- | ------------------------ |
-| < 1 ms          | Stable                   |
-| 1 – 15 ms       | Increase rate correction |
-| > 30 ms         | Rebuffer / reschedule    |
-| > 40 ms         | Audible echo → reset     |
-
-Derived from psychoacoustic limits:
-
-* Haas / Echo Perception
-  [https://www.wikiaudio.org/haas-effect/](https://www.wikiaudio.org/haas-effect/)
-
----
-
-## 12. Physical Acoustic Limitation
-
-Even perfect clock sync cannot remove spatial delay:
-
-* ~3 ms per meter sound propagation
-
-Reference:
-
-* Psychoacoustic Delay Perception Studies
-  [https://lup.lub.lu.se/luur/download?func=downloadFile&recordOId=8052964&fileOId=8053165](https://lup.lub.lu.se/luur/download?func=downloadFile&recordOId=8052964&fileOId=8053165)
-
----
-
-## 13. Design Outcome
-
-Stable distributed playback requires:
-
-* Offset estimation
-* Drift prediction
-* Jitter rejection
-* Rate correction
-
-Clock sync alone is insufficient.
-
-
-## Presence Gateway Architecture: Multi-Device Support & Targeted Fanout
-
-Our presence gateway is designed to efficiently handle real-time online/offline status updates across a distributed system. 
-
-### The Problem: Single-Channel Overwrites & Broadcast Spam
-Initially, the gateway mapped a single `UserID` to a single channel. This meant if a user opened the app on their phone and a web browser simultaneously, the second connection would overwrite the first. When one device disconnected, it would close the channel for the other. 
-
-Furthermore, listening to presence events meant listening to *every* event in the system, forcing the application to filter massive amounts of irrelevant traffic, wasting bandwidth and client CPU.
-
-### The Solution: Targeted Subscriptions & Multi-Device Fanout
-We restructured the in-memory `ConnectionManager` to support concurrent device sessions and granular event routing.
-
-1. **Multi-Device Connection Indexing**: 
-   Instead of a flat `map[string]chan`, the gateway now uses `map[string]map[string]*Connection` (`userId` -> `connectionId` -> `Connection`).
-   * **Result:** A user can connect from a mobile app, a tablet, and a web browser simultaneously. Each connection gets a unique UUID, ensuring that one tab disconnecting only cleans up its own stream, leaving the others active.
-
-2. **Targeted Watchers (Subscribed Fanout)**:
-   Clients now pass an array of `TargetUserIDs` in their gRPC `SubscribePresence` request (e.g., the IDs of the people in their current room or friend list). 
-   * **Result:** The manager maintains an inverted index (`map[string]map[string]struct{}`) mapping a `TargetUserID` to the set of `connectionIds` watching them. 
-
-3. **O(1) Event Routing**:
-   When the Redis PubSub listener receives an online/offline event for `User A`, it no longer broadcasts it to everyone. Instead, it looks up `User A` in the watcher index and pushes the event *only* to the specific connections that requested to watch `User A`.
-   
-4. **Resilient Streaming & Safe Cleanup**:
-   We introduced robust channel closure handling (`case event, ok := <-conn.Chan`) to prevent zero-value spam loops. When a stream drops, the `RemoveConnection` method cleans up the exact connection ID from the user's connection map and removes it from all associated watcher target sets in O(N) time (where N is the number of targets watched by that specific connection).
-
----
-
-## Presence Load Testing Report
-
-This report summarizes real-world load-test behavior of the presence gateway using a single laptop as the load generator.
-
-### Test Context
-
-- Scenario: Presence connection and message-receive validation
-- Objective: 100,000 active users
-- Constraint: Run stopped early due to load-generator RAM pressure
-- Peak reached: 51,322 active users
-
-### Results Overview
-
-| Run Target | Time Elapsed | Active/Target | Total Requests | Errors | Messages Rx | Connect Rate | p50 | p90 | p95 | p99 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 50 | 37s | 0 / 50 | 50 | 0 | 50 | 1.35 req/s | 1.365 ms | 1.595 ms | 1.769 ms | 3.036 ms |
-| 5,000 | 332s | 0 / 5,000 | 5,000 | 0 | 5,000 | 15.06 req/s | 0.756 ms | 0.933 ms | 0.992 ms | 1.231 ms |
-| 20,000 | 632s | 0 / 20,000 | 20,000 | 0 | 20,000 | 31.64 req/s | 0.713 ms | 2.490 ms | 2.636 ms | 2.783 ms |
-| 100,000 target (stopped) | 308s | 51,322 / 100,000 | 51,322 | 0 | 51,322 | 166.63 req/s | 2.695 ms | 8.426 ms | 11.516 ms | 15.278 ms |
-
-### Key Findings
-
-- Reliability remained strong at scale: zero request errors up to 51,322 connections.
-- Tail latency stayed controlled under heavy load: p99 connect latency remained near 15 ms.
-- The stopping condition was load-generator resource exhaustion, not a backend correctness failure.
-- Current data supports backend stability at least through the 50k concurrent-user range for this workload shape.
-
-### What This Means (Simple Read)
-
-- The presence system handled a large concurrency level without request failures.
-- Latency increased as expected at higher scale, but remained in a healthy range.
-- The test was limited by local machine resources before backend saturation was reached.
-- A multi-generator run is still needed to claim a confirmed 100k-user capacity.
-
-### Benchmark Host Profile
-
-```text
- /\___/\       dis70rt@fedora
- )     (
-=\     /=      distribution    - Fedora Linux 43 (KDE Plasma Desktop Edition)
-  )   (        linux kernel    - Linux 6.19.8-200.fc43.x86_64
- /     \       cpu             - Intel Core i5-13500HX (14 cores / 20 threads)
- )     (       memory          - 15 GiB RAM, 8 GiB swap
-/       \      gpus            - Intel UHD + NVIDIA RTX 4050 Mobile
-\       /      terminal/shell  - kitty 0.43.1 / zsh 5.9
- \__ __/       wm              - Hyprland (Wayland)
+# Bluppi Backend
+
+Distributed music streaming backend with synchronized multi-device playback, real-time presence, social features, and a 500GB music catalog. Built with Go, gRPC, and a polyglot data layer.
+
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running](#running)
+- [Testing](#testing)
+- [Health Check](#health-check)
+- [Related Blog Posts](#related-blog-posts)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Architecture
+
+```mermaid
+graph TB
+    Client["Client (Flutter)"]
+
+    subgraph Cloudflare["Cloudflare Tunnel"]
+        Tunnel["cloudflared"]
+    end
+
+    subgraph Backend["Backend Services"]
+        API["API Server<br/>gRPC :50051"]
+        Gateway["Presence Gateway<br/>gRPC :50050"]
+        Audio["Audio API<br/>FastAPI :8001"]
+    end
+
+    subgraph Data["Data Layer"]
+        PG["PostgreSQL 16"]
+        Redis["Redis 7"]
+        Solr["Solr 9.10<br/>500GB Catalog"]
+        MG["Memgraph<br/>Social Graph"]
+    end
+
+    subgraph External["External Services"]
+        Firebase["Firebase Auth + FCM"]
+    end
+
+    Client --> Tunnel
+    Tunnel --> API
+    Tunnel --> Gateway
+    Tunnel --> Audio
+
+    Gateway -- "internal gRPC" --> API
+    Gateway -- "PubSub" --> Redis
+
+    API --> PG
+    API --> Redis
+    API --> Solr
+    API --> MG
+    API --> Firebase
+    Audio --> PG
+    Audio --> Redis
 ```
 
-### Hardware Snapshot
+**Request Flow**
 
-- CPU: 13th Gen Intel Core i5-13500HX (14 cores, 20 threads, up to 4.7 GHz)
-- RAM: 15 GiB
-- Swap: 8 GiB
-- Storage: 476.9 GB NVMe + 931.5 GB NVMe
-- GPU: Intel UHD Graphics + NVIDIA RTX 4050 Mobile
-- Kernel: Linux 6.19.8-200.fc43.x86_64
-- Open file limit during test: 1024
+1. Client connects through Cloudflare Tunnel via gRPC (TLS)
+2. API Server handles all domain operations (users, music, rooms, playback, notifications)
+3. Presence Gateway maintains persistent gRPC streams for online/offline status
+4. Gateway publishes presence events to Redis PubSub, fans out to subscribed connections
+5. Event bus (Redis Streams) drives async workflows: notifications, activity feeds, push delivery
 
-### Recommended Next Steps
+## Tech Stack
 
-1. Run a 30-60 minute soak test at 20k-40k users.
-2. Re-run high-concurrency ramp with smaller steps (for example, +5k every 2-3 minutes).
-3. Record backend CPU, memory, Redis/Postgres connections, and network throughput at peak.
-4. Re-test after raising open-file limits to remove client-side socket constraints.
+| Component | Technology |
+|---|---|
+| Language | Go 1.25, Python 3 (audio service) |
+| Transport | gRPC with Protobuf, TLS |
+| Auth | Firebase Admin SDK (JWT verification) |
+| Database | PostgreSQL 16 |
+| Cache / PubSub / Streams | Redis 7 |
+| Search | Apache Solr 9.10 (eDisMax, cursor pagination) |
+| Graph | Memgraph (social graph, recommendations) |
+| Push Notifications | Firebase Cloud Messaging |
+| Containerization | Docker, Docker Compose |
+| Tunnel | Cloudflare Tunnel (cloudflared) |
+| Logging | Zerolog (structured, JSON) |
 
-### Quick Conclusion
+## Project Structure
 
-The presence gateway shows strong reliability and good latency behavior through 51k concurrent users in a single-machine test setup. The next milestone is validating full 100k behavior with higher client-side limits and/or distributed load generation.
+```
+bluppi-backend/
+    cmd/
+        api/                        # API server entrypoint
+        gateway/                    # Presence gateway entrypoint
+        loadtest/                   # Load testing tools
+    internals/
+        users/                      # User profiles, follows, social graph
+        music/                      # Tracks, search, likes, history, discovery
+        party/                      # Room creation, join/leave, live chat
+        playback/                   # Synchronized playback, room state machine
+        presence/                   # Heartbeat recording, session expiry
+        gateway/                    # Connection manager, event fanout, streaming
+        activity/                   # Friends activity feed
+        notifications/              # Notification pipeline, FCM push delivery
+        infrastructure/
+            database/               # Postgres, Redis, Solr, Memgraph clients
+            middlewares/            # Auth, logging, panic recovery interceptors
+            routes/                 # gRPC service registration, handler wiring
+            eventBus/               # Redis Streams publish/subscribe
+            firebase/               # Firebase Auth + FCM initialization
+        proto/                      # Protobuf service definitions
+        gen/                        # Generated gRPC code (gitignored)
+        utils/                      # Cursor encoding, pagination helpers
+        tests/                      # Integration tests
+    audio/                          # Python FastAPI service (yt-dlp)
+    migrations/                     # ETL scripts for music catalog import
+    certs/                          # TLS certificates (gitignored)
+    cloudflared/                    # Tunnel configuration (secrets gitignored)
+```
+
+Each feature module follows a consistent layout:
+
+```
+internals/<feature>/
+    handler.go                      # gRPC handler (transport layer)
+    service.go                      # Business logic
+    repository.go                   # Postgres data access
+    model.go                        # Domain types
+    mapper.go                       # Proto <> domain mapping
+    memgraph_repo.go                # Graph database queries (where applicable)
+    redis_repository.go             # Redis data access (where applicable)
+    consumer.go                     # Event bus consumer (where applicable)
+    reaper.go                       # Background cleanup goroutine (where applicable)
+```
+
+## Features
+
+**Synchronized Playback**
+Multi-device audio sync using PTP-style clock synchronization, quorum-based buffer readiness (80% threshold), and microsecond-precision scheduled start times. Playback state machine handles track changes, play/pause, and drift correction.
+
+**Real-time Presence**
+Dedicated gateway server with multi-device connection indexing, targeted subscriber fanout (O(1) event routing), and automatic session reaping. Load tested to 51k concurrent connections with zero errors.
+
+**Music Catalog and Search**
+500GB external catalog indexed in Solr. eDisMax queries with field boosting (`title^5 artists^2`), phrase boosting, and cursor-based deep pagination.
+
+**Social Graph**
+Follows, follower counts (trigger-maintained), friends activity feed, and graph-based music discovery (Memgraph). Weekly discover algorithm traverses listening patterns of followed users.
+
+**Rooms and Live Chat**
+Room creation with unique codes, public/private visibility, invite system, real-time event streaming (join/leave/chat via Redis PubSub), room lobby feed, and host heartbeat with automatic room reaping.
+
+**Notifications**
+Event-driven pipeline: domain events published to Redis Streams, consumed by notification workers, persisted to Postgres, and delivered via Firebase Cloud Messaging. Supports follow notifications, party invites, and listener activity alerts.
+
+**Middlewares**
+Chained gRPC interceptors for: Firebase JWT authentication (unary + stream), structured request logging with latency tracking, and panic recovery with stack trace capture. Mock auth is available but gated behind `GO_ENV=development`.
+
+## Prerequisites
+
+- Go 1.25+
+- Docker and Docker Compose
+- A Firebase project with Auth and Cloud Messaging enabled
+- TLS certificates (self-signed works for development, see `san.cnf`)
+- (Optional) Cloudflare Tunnel credentials for remote access
+
+## Installation
+
+```bash
+git clone https://github.com/dis70rt/bluppi-backend.git
+cd bluppi-backend
+```
+
+Copy and configure environment variables:
+
+```bash
+cp .env.example .env
+# Edit .env with your database credentials, Redis config, etc.
+```
+
+Place your Firebase Admin SDK credentials JSON at the project root:
+
+```bash
+# Download from Firebase Console > Project Settings > Service Accounts
+# The file is gitignored via the *adminsdk* pattern
+cp your-firebase-adminsdk.json bluppi-app-firebase-adminsdk-fbsvc-XXXXXXXX.json
+```
+
+Generate TLS certificates for development:
+
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout certs/server.key -out certs/server.crt \
+  -config san.cnf
+```
+
+**Music Catalog**: The tracks database is a ~500GB external dataset. The ETL pipeline in `migrations/` handles importing catalog data into Postgres and Solr. Search will return empty results until you load your own catalog. See `migrations/main.py` for the import script.
+
+## Running
+
+**With Docker Compose (all services):**
+
+```bash
+make build
+make up
+```
+
+This starts: PostgreSQL, Redis, Solr, Memgraph, API Server, Presence Gateway, Audio API, and Cloudflare Tunnel.
+
+Other useful commands:
+
+```bash
+make logs        # Tail logs from all containers
+make restart     # Stop and restart all services
+make grid        # Open a tmux grid with per-service log panes
+make down        # Stop all services
+make clean       # Stop and remove volumes
+```
+
+**Running API server locally (without Docker):**
+
+```bash
+go run cmd/api/main.go
+```
+
+**Running Presence Gateway locally:**
+
+```bash
+go run cmd/gateway/main.go
+```
+
+## Testing
+
+```bash
+go test ./internals/... ./cmd/...
+```
+
+Integration tests are in `internals/tests/` and require a running Postgres instance configured via `TEST_DB_*` environment variables.
+
+The API Docker image runs the full test suite as a build stage before producing the binary. See `Dockerfile.api`.
+
+## Health Check
+
+The API server implements the standard gRPC health checking protocol (`grpc.health.v1.Health`).
+
+```bash
+grpcurl -plaintext localhost:50051 grpc.health.v1.Health/Check
+```
+
+Response when serving:
+
+```json
+{
+  "status": "SERVING"
+}
+```
+
+## Related Blog Posts
+
+In-depth writeups on some of the more involved subsystems in this project:
+
+| Topic | Description |
+|---|---|
+| Clock Sync for Distributed Audio | PTP-style probing, jitter suppression, Kalman filter state tracking, and sub-millisecond playback alignment across devices. |
+| Presence System at Scale | Multi-device connection indexing, targeted fanout, reaper pattern, and load testing to 50k+ concurrent users. |
+
+*Links will be added here as posts are published.*
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
