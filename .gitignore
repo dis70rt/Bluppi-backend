@@ -13,3 +13,4 @@ cloudflared/*.json
 cloudflared/*.pem
 
 certs/
+skills-lock.json
