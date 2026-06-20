@@ -6,17 +6,17 @@ protocol: http2
 
 ingress:
   # 1. Android Deeplinks & Web profiles
-  - hostname: bluppi.saikat.in
+  - hostname: bluppi-api.saikat.in
     path: /(u|invite|\.well-known)/.*
     service: http://bluppi-audio-api:8000
 
   # 2. Dedicated REST API
-  - hostname: bluppi.saikat.in
+  - hostname: bluppi-api.saikat.in
     path: /api/rest/.*
     service: http://bluppi-audio-api:8000
 
   # 3. gRPC Gateway (REST API v2)
-  - hostname: bluppi.saikat.in
+  - hostname: bluppi-api.saikat.in
     path: /presences.PresenceGateway/.*
     service: https://bluppi-gateway:50050
     originRequest:
@@ -28,7 +28,7 @@ ingress:
       connectTimeout: 30s
 
   # 4. Pure gRPC API (Catch-All)
-  - hostname: bluppi.saikat.in
+  - hostname: bluppi-api.saikat.in
     service: https://bluppi-api:50051
     originRequest:
       noTLSVerify: true
